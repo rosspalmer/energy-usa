@@ -2,6 +2,7 @@ import pandas as pd
 from sqlalchemy import text
 from energyusa.database import engine
 from energyusa.models import Production, Consumption
+import json
 
 def transform_eia_data():
     """
@@ -25,10 +26,12 @@ def transform_eia_data():
         # Transform SEDS
         for _, row in seds_df.iterrows():
             raw = row['raw_json']
-            # Mapping SEDS 'MSN' codes to logic is complex.
-            # Assuming 'CLTCB' (Coal Total Consumption) for consumption example
-            # Assuming 'CLPRB' (Coal Production) for production example
-            # For MVP, we just take the value and assume it's 'Consumption' if not specified
+            
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
             
             # Example Transformation
             if 'period' in raw:
@@ -36,16 +39,12 @@ def transform_eia_data():
                 
                 # Naive mapping
                 record = {
-                    'date': date_val,
+                    # Convert pandas Timestamp to python datetime or string for SQL compatibility
+                    'date': date_val.to_pydatetime(),
                     'sector': 'All', # Simplified
                     'value': float(raw.get('value', 0) or 0),
                     'unit': raw.get('unit', 'BTU')
                 }
-                
-                # Insert into Consumption (Analysis)
-                # Using core insert for performance or ORM
-                # We'll use ORM logic via a quick bulk construct or just loop for clarity in MVP
-                # But standard SQL insert is better for 'transform' step to avoid session overhead
                 
                 conn.execute(
                     text("INSERT INTO analysis.consumption (date, sector, value, unit) VALUES (:date, :sector, :value, :unit)"),
@@ -66,9 +65,18 @@ def transform_epa_data():
     with engine.connect() as conn:
         for _, row in df.iterrows():
             raw = row['raw_json']
+            
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+
             # Map to Production
+            date_val = pd.to_datetime(str(raw.get('year')), format='%Y')
+            
             record = {
-                'date': pd.to_datetime(str(raw.get('year')), format='%Y'),
+                'date': date_val.to_pydatetime(),
                 'source': 'eGRID',
                 'fuel_type': 'Mix',
                 'value': float(raw.get('net_gen', 0)),
@@ -85,4 +93,3 @@ def transform_epa_data():
             )
         conn.commit()
     print("Transformed EPA data.")
-
