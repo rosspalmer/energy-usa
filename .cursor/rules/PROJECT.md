@@ -2,14 +2,15 @@
 
 ## Core features
 
-- Live and historical data reader API
+- Live and historical data reader RestAPI
 - Fast database correlating data points on a regional level
 - Clean and fun interactive UI for exploring the data
 
 ## Tech Stack
 
 - Python + FastAPI application for reading, transforming, and serving data
-- Postgres database for storing data cleaned data
+    - Use uv as a package manager
+- Postgres SQL database for storing data cleaned data
 - Web UI????
 - Docker compose setup
 
