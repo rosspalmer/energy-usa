@@ -75,6 +75,23 @@ energyusa setup-db
   energyusa show-production
   ```
 
+### Historical Backfill
+To run a full historical backfill in an isolated database (`energyusa_historical`):
+
+```bash
+./scripts/run_local_historical.sh "2020-01-01" "2020-12-31"
+```
+
+### Jupyter Notebook Environment
+To explore the data interactively:
+
+1.  Start the Jupyter server:
+    ```bash
+    uv run jupyter notebook
+    ```
+2.  Open `notebooks/exploration.ipynb`.
+3.  Run the cells to connect to the database and visualize Production/Consumption data.
+
 ## Testing
 
 Run the test suite using `pytest`. Requires the test database `energyusa_test` to be running.
@@ -82,4 +99,3 @@ Run the test suite using `pytest`. Requires the test database `energyusa_test` t
 ```bash
 uv run pytest
 ```
-

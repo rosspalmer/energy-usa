@@ -14,67 +14,207 @@ class EIAExtractor(BaseExtractor):
         if not self.api_key:
             raise ValueError("EIA_API_KEY not found in config")
 
-    def extract(self, mode: str = "refresh"):
+    def extract(self, mode: str = "refresh", start_date: str = None, end_date: str = None):
         """
         Extract data from EIA API.
-        For MVP, we focus on Electricity (Grid Monitor) and SEDS.
         """
-        self._extract_electricity(mode)
-        self._extract_seds(mode)
+        self._extract_electricity(mode, start_date, end_date)
+        self._extract_seds(mode, start_date, end_date)
+        self._extract_monthly_generation(mode, start_date, end_date)
+        self._extract_retail_sales(mode, start_date, end_date)
+        self._extract_operating_data(mode, start_date, end_date)
+        self._extract_interchange(mode, start_date, end_date)
+        self._extract_generator_construction(mode, start_date, end_date)
 
-    def _extract_electricity(self, mode: str):
-        # Example: Electricity Operating Data (Hourly)
-        # Path: electricity/rto/daily-region-sub-ba-data
-        # Note: Using daily/hourly endpoint structure. 
-        # For simplicity in this MVP, we fetch a small window.
-        
-        # Adjust start date based on mode
-        if mode == "historical":
-            start_date = "2020-01-01" # MVP historical start
+    def _get_start_date(self, mode, start_date, historical_default, recent_months=1):
+        if start_date:
+            return start_date
+        elif mode == "historical":
+            return historical_default
         else:
-            # Recent data (last 30 days roughly)
-            start_date = datetime.now().replace(month=datetime.now().month-1).strftime("%Y-%m-%d") if datetime.now().month > 1 else "2024-01-01"
+            # Recent data
+            now = datetime.now()
+            try:
+                effective = now.replace(month=now.month - recent_months).strftime("%Y-%m-%d")
+            except ValueError:
+                # Handle January edge case by going back to previous year
+                year = now.year
+                month = now.month - recent_months
+                while month <= 0:
+                    month += 12
+                    year -= 1
+                effective = now.replace(year=year, month=month).strftime("%Y-%m-%d")
+            return effective
+
+    def _extract_electricity(self, mode: str, start_date: str = None, end_date: str = None):
+        # Example: Electricity Operating Data (Hourly)
+        # Path: electricity/rto/region-data
+        
+        effective_start = self._get_start_date(mode, start_date, "2020-01-01")
 
         url = f"{self.BASE_URL}electricity/rto/region-data/data/"
         params = {
             "api_key": self.api_key,
             "frequency": "hourly",
             "data[0]": "value",
-            "start": start_date,
+            "start": effective_start,
             "sort[0][column]": "period",
             "sort[0][direction]": "asc",
             "offset": 0,
             "length": 5000 # Limit for MVP chunks
         }
         
+        if end_date:
+            params["end"] = end_date
+        
         self._fetch_and_store(url, params, "electricity/rto/region-data")
 
-    def _extract_seds(self, mode: str):
+    def _extract_seds(self, mode: str, start_date: str = None, end_date: str = None):
         # State Energy Data System (SEDS)
         # Path: seds/data
         
-        if mode == "historical":
-            start_year = "2010"
+        # SEDS uses years
+        if start_date:
+            effective_start = start_date[:4]
+        elif mode == "historical":
+            effective_start = "2010"
         else:
-            start_year = str(datetime.now().year - 1)
+            effective_start = str(datetime.now().year - 1)
 
         url = f"{self.BASE_URL}seds/data/"
         params = {
             "api_key": self.api_key,
             "frequency": "annual",
             "data[0]": "value",
-            "start": start_year,
+            "start": effective_start,
             "sort[0][column]": "period",
             "sort[0][direction]": "asc",
             "offset": 0,
             "length": 5000
         }
+        
+        if end_date:
+            params["end"] = end_date[:4]
 
         self._fetch_and_store(url, params, "seds/data")
+
+    def _extract_monthly_generation(self, mode: str, start_date: str = None, end_date: str = None):
+        # Path: electricity/electric-power-operational-data (New v2 replacement for monthly/generation)
+        effective_start = self._get_start_date(mode, start_date, "2020-01")
+        if len(effective_start) > 7:
+             effective_start = effective_start[:7]
+
+        url = f"{self.BASE_URL}electricity/electric-power-operational-data/data/"
+        params = {
+            "api_key": self.api_key,
+            "frequency": "monthly",
+            "data[0]": "generation",
+            "start": effective_start,
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "offset": 0,
+            "length": 5000
+        }
+        if end_date:
+             params["end"] = end_date[:7] if len(end_date) > 7 else end_date
+
+        self._fetch_and_store(url, params, "electricity/electric-power-operational-data")
+
+    def _extract_retail_sales(self, mode: str, start_date: str = None, end_date: str = None):
+        # Path: electricity/retail-sales
+        effective_start = self._get_start_date(mode, start_date, "2020-01")
+        if len(effective_start) > 7:
+             effective_start = effective_start[:7]
+
+        url = f"{self.BASE_URL}electricity/retail-sales/data/"
+        params = {
+            "api_key": self.api_key,
+            "frequency": "monthly",
+            "data[0]": "sales",
+            "data[1]": "price",
+            "start": effective_start,
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "offset": 0,
+            "length": 5000
+        }
+        if end_date:
+             params["end"] = end_date[:7] if len(end_date) > 7 else end_date
+
+        self._fetch_and_store(url, params, "electricity/retail-sales")
+
+    def _extract_operating_data(self, mode: str, start_date: str = None, end_date: str = None):
+        # Path: electricity/facility-fuel (Replacement for operating-data costs/receipts)
+        # Note: This endpoint provides fuel costs and qualities
+        effective_start = self._get_start_date(mode, start_date, "2020-01")
+        if len(effective_start) > 7:
+             effective_start = effective_start[:7]
+
+        url = f"{self.BASE_URL}electricity/facility-fuel/data/"
+        params = {
+            "api_key": self.api_key,
+            "frequency": "monthly",
+            "data[0]": "fuel_cost", # Updated column name for v2 facility-fuel
+            "start": effective_start,
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "offset": 0,
+            "length": 5000
+        }
+        if end_date:
+             params["end"] = end_date[:7] if len(end_date) > 7 else end_date
+
+        self._fetch_and_store(url, params, "electricity/facility-fuel")
+
+    def _extract_interchange(self, mode: str, start_date: str = None, end_date: str = None):
+        # Path: electricity/rto/interchange-data
+        effective_start = self._get_start_date(mode, start_date, "2020-01-01")
+
+        url = f"{self.BASE_URL}electricity/rto/interchange-data/data/"
+        params = {
+            "api_key": self.api_key,
+            "frequency": "hourly",
+            "data[0]": "value",
+            "start": effective_start,
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "offset": 0,
+            "length": 5000
+        }
+        if end_date:
+             params["end"] = end_date
+
+        self._fetch_and_store(url, params, "electricity/rto/interchange-data")
+    
+    def _extract_generator_construction(self, mode: str, start_date: str = None, end_date: str = None):
+        # Path: electricity/operating-generator-capacity (New v2 replacement for generators capacity)
+        # Extracting annual data for status and planned capacity
+        effective_start = self._get_start_date(mode, start_date, "2020")
+        if len(effective_start) > 4:
+             effective_start = effective_start[:4] # Annual
+
+        url = f"{self.BASE_URL}electricity/operating-generator-capacity/data/"
+        params = {
+            "api_key": self.api_key,
+            "frequency": "annual",
+            "data[0]": "summer_capacity_mw", # Available capacity metric
+            "data[1]": "technology",
+            "data[2]": "status",
+            "start": effective_start,
+            "sort[0][column]": "period",
+            "sort[0][direction]": "asc",
+            "offset": 0,
+            "length": 5000
+        }
+        if end_date:
+             params["end"] = end_date[:4] if len(end_date) > 4 else end_date
+
+        self._fetch_and_store(url, params, "electricity/operating-generator-capacity")
 
     def _fetch_and_store(self, url, params, api_path_tag):
         session = SessionLocal()
         try:
+            # Simplified fetching logic: handle pagination if needed in future, for now limit to length
             response = requests.get(url, params=params)
             response.raise_for_status()
             data = response.json()
@@ -83,41 +223,28 @@ class EIAExtractor(BaseExtractor):
                 records = data["response"]["data"]
                 
                 for record in records:
-                    stmt = insert(EIAData).values(
-                        api_path=api_path_tag,
-                        period=record.get("period"),
-                        value=float(record.get("value", 0) or 0),
-                        raw_json=record
-                    )
-                    # Upsert logic
-                    stmt = stmt.on_conflict_do_update(
-                        index_elements=['api_path', 'period'], # Relying on unique constraint
-                        set_=dict(value=stmt.excluded.value, raw_json=stmt.excluded.raw_json)
-                    )
-                    # Note: The unique constraint in models.py is (api_path, period).
-                    # However, EIA data is often unique by (period, respondent, series).
-                    # For a robust implementation, we'd filter specifically or expand the constraint.
-                    # For MVP, we will trust the insert or catch basic dupes, but really we should
-                    # probably store a composite key or hash if we want true upsert on granular rows.
-                    # Given "flatten to tabular form" requirement, sticking to simple model for now.
-                    
-                    # FIX: The UniqueConstraint in models.py is likely too broad for SEDS/Elec which have many series per period.
-                    # We will store strictly appended or relax constraint handling for now by handling exceptions if needed,
-                    # OR better: we just insert and let the ID autoincrement, but we want to avoid duplicates.
-                    # Let's modify the insert to NOT fail, or simpler: just insert.
-                    # Actually, better approach for 'raw' is often just append-only with a timestamp, 
-                    # but user asked to "extract... and insert".
-                    
-                    # Let's proceed with standard add for now to get data in, ignoring conflicts if we can't easily identify unique key without more specific logic.
-                    # Re-reading model: api_path + period is definitely not unique (many regions per period).
-                    # We should probably drop the unique constraint on the model or make it more specific.
-                    # For this MVP, I will remove the on_conflict clause and just insert, 
-                    # assuming the user manages cleanup or we accept duplicates in 'raw' for now.
-                    
+                    # Handle missing value field if we requested multiple data fields
+                    val = 0.0
+                    # Robust value extraction based on potential column names in v2
+                    if "value" in record:
+                        val = float(record.get("value", 0) or 0)
+                    elif "generation" in record:
+                        val = float(record.get("generation", 0) or 0)
+                    elif "sales" in record:
+                        val = float(record.get("sales", 0) or 0)
+                    elif "fuel_cost" in record:
+                        val = float(record.get("fuel_cost", 0) or 0)
+                    elif "cost" in record:
+                        val = float(record.get("cost", 0) or 0)
+                    elif "summer_capacity_mw" in record:
+                        val = float(record.get("summer_capacity_mw", 0) or 0)
+                    elif "planned_generation_capacity_mw" in record:
+                        val = float(record.get("planned_generation_capacity_mw", 0) or 0)
+
                     db_rec = EIAData(
                         api_path=api_path_tag,
-                        period=record.get("period"),
-                        value=float(record.get("value", 0) or 0),
+                        period=str(record.get("period")),
+                        value=val,
                         raw_json=record
                     )
                     session.add(db_rec)
@@ -132,4 +259,3 @@ class EIAExtractor(BaseExtractor):
             session.rollback()
         finally:
             session.close()
-
