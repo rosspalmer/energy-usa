@@ -33,8 +33,9 @@ class Settings(BaseSettings):
     eia_request_timeout_seconds: float = 30.0
     """Timeout in seconds for each HTTP request to the EIA API."""
 
-    eia_ingest_timeout_seconds: float = 90.0
-    """Timeout in seconds for EIA requests during long-running ingest flows (paginated fetches)."""
+    eia_ingest_timeout_seconds: float = 180.0
+    """Timeout in seconds for EIA requests during long-running ingest flows (paginated fetches).
+    Large pages (e.g. electric-power-operational at high offset) may need 2–3 minutes."""
 
     eia_page_delay_seconds: float = 0.5
     """Delay in seconds between pagination requests during EIA ingest. Reduces timeouts and respects informal rate limits."""

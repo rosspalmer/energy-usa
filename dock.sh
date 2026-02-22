@@ -53,7 +53,7 @@ wait_for_prefect() {
 
 cmd_up() {
   local workers="${1:-${PREFECT_WORKERS:-1}}"
-  $COMPOSE_CMD up -d --scale prefect-worker="$workers"
+  $COMPOSE_CMD up -d --scale prefect-worker="$workers" --build
   echo "Stack up (prefect-worker x${workers}). Web: http://localhost:8000  Prefect: http://localhost:4200  pgweb: http://localhost:8080"
   wait_for_prefect || true
   cmd_worker_pool
