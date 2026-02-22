@@ -4,16 +4,14 @@ Runs on a monthly schedule (or on-demand). Paginates the EIA retail-sales/data
 endpoint and upserts into eia_retail_sales. Requires EIA_API_KEY and DATABASE_URL.
 """
 
-import logging
 from typing import Any
 
 from prefect import flow, task
+from prefect.logging import get_run_logger
 
 from energy_usa.config import Settings
 from energy_usa.db import get_connection, upsert_retail_sales
 from energy_usa.eia.manager import EIAManager
-
-logger = logging.getLogger(__name__)
 
 EIA_PAGE_LENGTH = 5000
 
@@ -31,6 +29,7 @@ async def fetch_eia_retail_sales(
 
     :returns: Combined list of row dicts from all pages.
     """
+    logger = get_run_logger()
     manager = EIAManager(
         base_url=base_url,
         api_key=api_key,
@@ -79,6 +78,7 @@ def upsert_retail_sales_task(
 
     :returns: Number of rows affected (inserted or updated).
     """
+    logger = get_run_logger()
     if not rows:
         return 0
     conn = get_connection(database_url)
@@ -98,6 +98,7 @@ async def ingest_eia_retail_sales() -> int:
 
     :returns: Total number of rows upserted.
     """
+    logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:
         raise ValueError("EIA_API_KEY is required for ingest_eia_retail_sales")
