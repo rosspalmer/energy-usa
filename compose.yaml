@@ -1,6 +1,6 @@
-# Single-machine stack: Postgres, Prefect server, Prefect process worker, FastAPI.
-# Requires .env with EIA_API_KEY and optionally POSTGRES_PASSWORD, or set env vars.
-# Create process work pool once: docker compose run --rm prefect-worker prefect work-pool create process-pool --type process
+# Single-machine stack: Postgres, Prefect server, Prefect process worker, Django web app.
+# Requires .env with EIA_API_KEY and optionally POSTGRES_PASSWORD. Create process work pool once:
+#   docker compose run --rm prefect-worker prefect work-pool create process-pool --type process
 
 services:
   postgres:
@@ -41,13 +41,15 @@ services:
       - prefect-server
       - postgres
 
-  api:
+  web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.web
     environment:
-      EIA_API_KEY: ${EIA_API_KEY}
       DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me-in-production}
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
     ports:
       - "8000:8000"
     depends_on:

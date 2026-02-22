@@ -1,9 +1,7 @@
-"""Energy USA: Live and historical US energy data API.
+"""Energy USA: Live and historical US energy data.
 
-This package provides a FastAPI application that reads data from the U.S. Energy
-Information Administration (EIA) API v2 and serves it via REST. It includes
-an EIA client, a concurrent API call manager with retries, and config loaded
-from the environment. Run the app with::
-
-    uv run uvicorn energy_usa.main:app --reload
+This package provides Prefect flows that ingest data from the U.S. Energy
+Information Administration (EIA) API v2 into Postgres, plus a DB layer for
+upserts. EIA client and config are used by the Prefect worker. The web app
+is Django with Dash (see the web/ project when present).
 """

@@ -14,10 +14,11 @@ usage() {
 Usage: $0 <command> [options]
 
 Commands:
-  up              Start all services (detached)
+  up [workers]    Start all services (detached), create work pool, and register deployments.
+                  Optional workers = number of prefect-worker replicas (default: 1, or PREFECT_WORKERS)
   down            Stop and remove containers
   restart         Restart all services
-  logs [service]   Tail logs (optional: postgres, prefect-server, prefect-worker, api, pgweb)
+  logs [service]   Tail logs (optional: postgres, prefect-server, prefect-worker, pgweb, web)
   ps              List running services
   worker-pool     Create Prefect process work pool (idempotent; run once)
   deploy          Register Prefect ingest deployments (run after worker-pool)
@@ -25,15 +26,19 @@ Commands:
 
 Examples:
   $0 up
-  $0 worker-pool && $0 deploy
+  $0 up 3
+  PREFECT_WORKERS=4 $0 up
   $0 run ingest-eia-electricity-all
   $0 logs prefect-worker
 EOF
 }
 
 cmd_up() {
-  $COMPOSE_CMD up -d
-  echo "Stack up. API: http://localhost:8000  Prefect: http://localhost:4200  pgweb: http://localhost:8080"
+  local workers="${1:-${PREFECT_WORKERS:-1}}"
+  $COMPOSE_CMD up -d --scale prefect-worker="$workers"
+  echo "Stack up (prefect-worker x${workers}). Web: http://localhost:8000  Prefect: http://localhost:4200  pgweb: http://localhost:8080"
+  cmd_worker_pool
+  cmd_deploy
 }
 
 cmd_down() {
@@ -71,7 +76,7 @@ cmd_run() {
 }
 
 case "${1:-}" in
-  up)        cmd_up ;;
+  up)        cmd_up "$2" ;;
   down)      cmd_down ;;
   restart)   cmd_restart ;;
   logs)     cmd_logs "$2" ;;

@@ -18,6 +18,7 @@ from energy_usa.flows.eia_electric_power_operational import ingest_eia_electric_
 from energy_usa.flows.eia_electricity_all import ingest_eia_electricity_all
 from energy_usa.flows.eia_retail_sales import ingest_eia_retail_sales
 from energy_usa.flows.eia_state_source_disposition import ingest_eia_state_source_disposition
+from energy_usa.flows.eia_state_summary import ingest_eia_state_summary
 
 MONTHLY_CRON = "0 0 1 * *"  # 1st of month at 00:00 UTC
 
@@ -45,6 +46,14 @@ async def main() -> None:
         RunnerDeployment.from_flow(
             ingest_eia_state_source_disposition,
             name="ingest-eia-state-source-disposition",
+            work_pool_name="process-pool",
+            cron=MONTHLY_CRON,
+            tags=["ingest", "eia"],
+            entrypoint_type=EntrypointType.MODULE_PATH,
+        ),
+        RunnerDeployment.from_flow(
+            ingest_eia_state_summary,
+            name="ingest-eia-state-summary",
             work_pool_name="process-pool",
             cron=MONTHLY_CRON,
             tags=["ingest", "eia"],

@@ -1,0 +1,93 @@
+/* Retro gas-station theme: day and night. CSS custom properties for theming.
+   See docs/theming.md for adding Tailwind/Bootstrap later. */
+:root,
+[data-theme="day"] {
+  --color-bg: #fff;
+  --color-text: #1a1a1a;
+  --color-accent-red: #c41e3a;
+  --color-accent-teal: #008b8b;
+  --color-card-bg: #f8fafa;
+  --radius-base: 16px;
+  --radius-pill: 999px;
+  --font-heading: "Georgia", "Times New Roman", serif;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="night"] {
+  --color-bg: #2c1810;
+  --color-text: #f0e6dc;
+  --color-accent-red: #e85a6b;
+  --color-accent-teal: #20b2aa;
+  --color-card-bg: #3d2618;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+  min-height: 100vh;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: var(--color-accent-teal);
+  color: #fff;
+  border-radius: 0 0 var(--radius-base) var(--radius-base);
+  box-shadow: var(--shadow-card);
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-family: var(--font-heading);
+}
+
+.theme-switcher {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.theme-switcher button {
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.theme-switcher button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-switcher button[aria-pressed="true"] {
+  background: var(--color-accent-red);
+}
+
+.site-main {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-container {
+  background: var(--color-card-bg);
+  border-radius: var(--radius-base);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.dashboard-title {
+  color: var(--color-accent-teal);
+  font-family: var(--font-heading);
+}
+
+.dashboard-controls {
+  margin-bottom: 1rem;
+}

@@ -1,19 +1,28 @@
 [project]
 name = "energy-usa"
 version = "0.1.0"
-description = "Live and historical US energy data API"
+description = "Live and historical US energy data (Postgres + Prefect); Django+Dash web app"
 readme = "README.md"
 authors = [
     { name = "Ross Palmer", email = "rpalmer@sovrn.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.129.2",
     "httpx>=0.28.1",
     "prefect>=2.0.0,<3",
     "psycopg[binary]>=3.1.0",
     "pydantic-settings>=2.13.1",
-    "uvicorn[standard]>=0.41.0",
+]
+
+[project.optional-dependencies]
+web = [
+    "django>=5.0",
+    "django-plotly-dash>=2.0",
+    "dash>=2.0",
+    "plotly>=5.0",
+    "pandas>=2.0",
+    "psycopg[binary]>=3.1.0",
+    "gunicorn>=22.0",
 ]
 
 [build-system]

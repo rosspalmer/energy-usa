@@ -7,18 +7,16 @@ alwaysApply: true
 
 ## Core features
 
-- Live and historical data reader RestAPI
+- Live and historical data in Postgres (ingested via Prefect from EIA)
 - Fast database correlating data points on a regional level
-- Clean and fun interactive UI for exploring the data
+- Clean and fun interactive UI for exploring the data (Django + Dash)
 
 ## Tech Stack
 
 - Use Python with uv as package manager
-- Python + FastAPI application for reading and serving data
-    - Use uv as a package manager
-- Prefect orchestrator
-- Postgres SQL database for storing data cleaned data
-- Django app with Dash (plotly) dashboarding
+- Prefect orchestrator for scheduled ingest jobs (EIA used only by Prefect; no separate REST API for live EIA)
+- Postgres SQL database for storing cleaned data
+- Django app with Dash (plotly) for dashboarding; data is read from Postgres
 - Docker compose setup
 
 ## API and Data Service
@@ -39,17 +37,18 @@ alwaysApply: true
 
 ### Ingest and Docker
 
-- Prefect ingest jobs for EIA electricity data: retail-sales (`eia_retail_sales`), electric-power-operational (`eia_electric_power_operational`), and state source-disposition (`eia_state_source_disposition`). Each has its own flow and can be scheduled or run on demand. The flow `ingest-eia-electricity-all` runs all three as subflows in one run. No transformation or display jobs in the initial setup.
-- Docker Compose runs Postgres, Prefect server, a Prefect process worker, and the FastAPI service on a single machine; see `compose.yaml` and `.env.example`.
+- Prefect ingest jobs for EIA electricity data: retail-sales (`eia_retail_sales`), electric-power-operational (`eia_electric_power_operational`), state source-disposition (`eia_state_source_disposition`), and state-electricity-profiles/summary (`eia_state_summary`). Each has its own flow and can be scheduled or run on demand. The flow `ingest-eia-electricity-all` runs all four as subflows in one run. No transformation or display jobs in the initial setup.
+- Docker Compose runs Postgres, Prefect server, a Prefect process worker, and the Django (web) service on a single machine; see `compose.yaml` and `.env.example`.
 - Additional electricity endpoints (e.g. facility-fuel, rto/*) can be added by following the same pattern: migration, db upsert module, flow with fetch + upsert tasks, then wire into the orchestrator and deploy script.
 
 ## Django Web App
 
-- Theme should be styled off a retro gas station
+- Theme is styled off a retro gas station
     - bright reds and teal blues with white background
     - Rounded lines 50s car style shapes
     - Use gas station signs as inspiration for icons
     - A bright daytime theme and a warm but early evening like dark theme
+- Theming is implemented with CSS custom properties (day and night themes). Optional styling tech (e.g. Tailwind, Bootstrap) is documented for future use; see `docs/theming.md`.
 - Display dashboard (plotly dash) pages with top line selector
     - Show electricity price, generation, consumption for a state over time
         - Have ability to compare neighbors
