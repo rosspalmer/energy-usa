@@ -9,18 +9,19 @@ Live and historical US energy data API (FastAPI + EIA).
 3. Create and populate `.env` in project directory using `.env.example` template
     - `cp .env.example .env`
     - Must update `EIA_API_KEY` with key from #2
+    - May set custom postgres username/password (OPTIONAL)
 
 ## Docker Compose
 
-Run Postgres, Prefect server, Prefect worker, and the API on one machine:
+Run Postgres, Prefect server, Prefect worker, the API, and pgweb (Postgres browser) on one machine:
 
 ```bash
-cp .env.example .env   # set EIA_API_KEY (and optionally POSTGRES_PASSWORD)
 docker compose up -d
 ```
 
 - API: http://localhost:8000  
 - Prefect UI: http://localhost:4200  
+- pgweb (Postgres browser): http://localhost:8080  
 
 Create the process work pool once so the worker can run flows:
 

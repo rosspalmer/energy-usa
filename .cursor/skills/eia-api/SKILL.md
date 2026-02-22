@@ -15,6 +15,8 @@ Apply this skill when:
 
 ## Quick reference
 
+- **Latest Docs:** https://www.eia.gov/opendata/
+
 - **Base URL:** `https://api.eia.gov/v2`
 - **Authentication:** API key required. Pass as query parameter `api_key` (per EIA docs). Get a key from [EIA Open Data registration](https://www.eia.gov/opendata/register.php).
 - **Routes:** `/electricity`, `/natural-gas`, `/petroleum`, `/coal`, `/total-energy`, with optional subpaths (e.g. `electricity/retail-sales/data`).
