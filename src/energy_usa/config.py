@@ -33,10 +33,16 @@ class Settings(BaseSettings):
     eia_request_timeout_seconds: float = 30.0
     """Timeout in seconds for each HTTP request to the EIA API."""
 
+    eia_ingest_timeout_seconds: float = 90.0
+    """Timeout in seconds for EIA requests during long-running ingest flows (paginated fetches)."""
+
+    eia_page_delay_seconds: float = 0.5
+    """Delay in seconds between pagination requests during EIA ingest. Reduces timeouts and respects informal rate limits."""
+
     eia_max_concurrent_requests: int = 4
     """Maximum number of EIA API requests allowed in flight at once (semaphore limit)."""
 
-    eia_max_retries: int = 3
+    eia_max_retries: int = 5
     """Number of retry attempts for failed EIA requests (5xx, timeouts, connection errors)."""
 
     database_url: str = ""

@@ -33,10 +33,29 @@ Examples:
 EOF
 }
 
+# Wait for Prefect server API to accept connections (avoids ConnectError when creating work pool).
+wait_for_prefect() {
+  local url="${PREFECT_API_URL:-http://localhost:4200/api}"
+  local max_attempts=30
+  local attempt=1
+  echo "Waiting for Prefect server at $url..."
+  while [ "$attempt" -le "$max_attempts" ]; do
+    if curl -s --connect-timeout 2 -o /dev/null "$url" 2>/dev/null; then
+      echo "Prefect server ready."
+      return 0
+    fi
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+  echo "Warning: Prefect server did not become ready in time. Work pool create and deploy may fail."
+  return 1
+}
+
 cmd_up() {
   local workers="${1:-${PREFECT_WORKERS:-1}}"
   $COMPOSE_CMD up -d --scale prefect-worker="$workers"
   echo "Stack up (prefect-worker x${workers}). Web: http://localhost:8000  Prefect: http://localhost:4200  pgweb: http://localhost:8080"
+  wait_for_prefect || true
   cmd_worker_pool
   cmd_deploy
 }

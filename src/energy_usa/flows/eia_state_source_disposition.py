@@ -5,6 +5,7 @@ state-electricity-profiles/source-disposition/data endpoint and upserts into
 eia_state_source_disposition. Requires EIA_API_KEY and DATABASE_URL.
 """
 
+import asyncio
 from typing import Any
 
 from prefect import flow, task
@@ -28,6 +29,7 @@ async def fetch_eia_state_source_disposition(
     timeout: float,
     max_concurrent: int,
     max_retries: int,
+    page_delay_seconds: float = 0.0,
 ) -> list[dict[str, Any]]:
     """Fetch all EIA state-electricity-profiles source-disposition data via pagination.
 
@@ -71,6 +73,8 @@ async def fetch_eia_state_source_disposition(
                     total_n = None
                 if total_n is not None and offset >= total_n:
                     break
+            if page_delay_seconds > 0:
+                await asyncio.sleep(page_delay_seconds)
         logger.info("Fetch complete: total rows=%s", len(all_data))
         return all_data
     finally:
@@ -115,9 +119,10 @@ async def ingest_eia_state_source_disposition() -> int:
     data = await fetch_eia_state_source_disposition(
         base_url=settings.eia_base_url,
         api_key=settings.eia_api_key,
-        timeout=settings.eia_request_timeout_seconds,
+        timeout=settings.eia_ingest_timeout_seconds,
         max_concurrent=settings.eia_max_concurrent_requests,
         max_retries=settings.eia_max_retries,
+        page_delay_seconds=settings.eia_page_delay_seconds,
     )
     total = upsert_state_source_disposition_task(settings.database_url, data)
     logger.info("Ingest complete: total rows upserted=%s", total)

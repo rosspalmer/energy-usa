@@ -1,27 +1,45 @@
-"""Prefect flow: run all EIA electricity dataset ingests as subflows.
+"""Prefect flow: run all EIA electricity dataset ingests as deployment runs.
 
-Runs ingest_eia_retail_sales, ingest_eia_electric_power_operational,
-ingest_eia_state_source_disposition, and ingest_eia_state_summary in parallel.
-Each runs as a child flow run. Requires EIA_API_KEY and DATABASE_URL.
+Submits each ingest as a separate deployment run so the work pool can assign
+them to different workers. Waits for all to complete and returns a summary.
+Requires PREFECT_API_URL and deployments to be registered.
 """
 
 import asyncio
+from typing import Any
 
 from prefect import flow
+from prefect.deployments import run_deployment
+from prefect.flow_runs import wait_for_flow_run
 from prefect.logging import get_run_logger
 
 from energy_usa.config import Settings
-from energy_usa.flows.eia_electric_power_operational import ingest_eia_electric_power_operational
-from energy_usa.flows.eia_retail_sales import ingest_eia_retail_sales
-from energy_usa.flows.eia_state_source_disposition import ingest_eia_state_source_disposition
-from energy_usa.flows.eia_state_summary import ingest_eia_state_summary
+
+# Deployment names: "flow-name/deployment-name" (same in our deploy script)
+DEPLOYMENT_NAMES = [
+    "ingest-eia-retail-sales/ingest-eia-retail-sales",
+    "ingest-eia-electric-power-operational/ingest-eia-electric-power-operational",
+    "ingest-eia-state-source-disposition/ingest-eia-state-source-disposition",
+    "ingest-eia-state-summary/ingest-eia-state-summary",
+]
+
+
+def _result_from_flow_run(flow_run: Any) -> int:
+    """Return the flow run result (rows upserted) or 0 if failed."""
+    if flow_run.state is None:
+        return 0
+    try:
+        return int(flow_run.state.result())
+    except Exception:
+        return 0
 
 
 @flow(name="ingest-eia-electricity-all", retries=2)
 async def ingest_eia_electricity_all() -> dict[str, int]:
     """Run all EIA electricity ingests (retail-sales, electric-power-operational, source-disposition, state-summary).
 
-    Each dataset ingest runs as a subflow. Returns a summary of rows upserted per dataset.
+    Each ingest is submitted as a separate deployment run so multiple workers
+    can run them in parallel. Returns a summary of rows upserted per dataset.
 
     :returns: Dict mapping dataset name to rows upserted.
     """
@@ -32,18 +50,29 @@ async def ingest_eia_electricity_all() -> dict[str, int]:
     if not settings.database_url:
         raise ValueError("DATABASE_URL is required for ingest_eia_electricity_all")
 
-    retail, operational, source_disp, state_summ = await asyncio.gather(
-        ingest_eia_retail_sales(),
-        ingest_eia_electric_power_operational(),
-        ingest_eia_state_source_disposition(),
-        ingest_eia_state_summary(),
+    # Submit all four as separate runs (no wait); work pool assigns each to a worker.
+    logger.info("Submitting four ingest deployment runs to work pool...")
+    runs = await asyncio.gather(
+        run_deployment(DEPLOYMENT_NAMES[0], timeout=0, as_subflow=False),
+        run_deployment(DEPLOYMENT_NAMES[1], timeout=0, as_subflow=False),
+        run_deployment(DEPLOYMENT_NAMES[2], timeout=0, as_subflow=False),
+        run_deployment(DEPLOYMENT_NAMES[3], timeout=0, as_subflow=False),
+    )
+
+    # Wait for all to complete (each may run on a different worker).
+    logger.info("Waiting for all ingest runs to complete...")
+    finished = await asyncio.gather(
+        wait_for_flow_run(flow_run_id=runs[0].id),
+        wait_for_flow_run(flow_run_id=runs[1].id),
+        wait_for_flow_run(flow_run_id=runs[2].id),
+        wait_for_flow_run(flow_run_id=runs[3].id),
     )
 
     summary = {
-        "retail_sales": retail,
-        "electric_power_operational": operational,
-        "state_source_disposition": source_disp,
-        "state_summary": state_summ,
+        "retail_sales": _result_from_flow_run(finished[0]),
+        "electric_power_operational": _result_from_flow_run(finished[1]),
+        "state_source_disposition": _result_from_flow_run(finished[2]),
+        "state_summary": _result_from_flow_run(finished[3]),
     }
     logger.info("Ingest all complete: %s", summary)
     return summary
