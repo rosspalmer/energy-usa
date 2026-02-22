@@ -1,0 +1,18 @@
+# Prefect worker: project code and deps so the ingest flow runs in-process.
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+WORKDIR /app
+ENV UV_COMPILE_BYTECODE=1
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY . .
+RUN uv sync --frozen --no-dev
+
+FROM python:3.12-slim
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/src /app/src
+COPY --from=builder /app/pyproject.toml /app/
+# Process worker runs flows in-process; needs EIA_API_KEY, DATABASE_URL, PREFECT_API_URL at runtime.
+# Create process work pool if missing: prefect work-pool create process-pool --type process
+CMD ["prefect", "worker", "start", "--pool", "process-pool", "--type", "process"]

@@ -1,0 +1,113 @@
+INFO:     Will watch for changes in these directories: ['/Users/rpalmer/repo/energy-usa']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [56535] using WatchFiles
+INFO:     Started server process [56537]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55209 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55232 - "GET /api/data/electricity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55257 - "GET /api/data/electricity?state_id=CO HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55281 - "GET /api/data/electricity?state_id=CO HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55308 - "GET /api/data/electricity?state_id=CO&sector_id=RES&length=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55312 - "GET /api/data/electricity?state_id=CO&sector_id=RES&length=10 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/energy_usa/routers/data.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56537]
+INFO:     Started server process [63317]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/routers/data.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63317]
+INFO:     Started server process [63318]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63318]
+INFO:     Started server process [63349]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/db/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63349]
+INFO:     Started server process [63431]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/db/retail_sales.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63431]
+INFO:     Started server process [63468]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/db/retail_sales.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63468]
+INFO:     Started server process [63498]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/db/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63498]
+INFO:     Started server process [63589]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/flows/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63589]
+INFO:     Started server process [63592]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/energy_usa/flows/eia_retail_sales.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63592]
+INFO:     Started server process [63628]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in '.venv/lib/python3.12/site-packages/websockets/legacy/auth.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/__init__.py', '.venv/lib/python3.12/site-packages/click/shell_completion.py', '.venv/lib/python3.12/site-packages/click/decorators.py', '.venv/lib/python3.12/site-packages/websockets/legacy/http.py', '.venv/lib/python3.12/site-packages/websockets/__main__.py', '.venv/lib/python3.12/site-packages/websockets/legacy/client.py', '.venv/lib/python3.12/site-packages/click/utils.py', '.venv/lib/python3.12/site-packages/websockets/version.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/server.py', '.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py', '.venv/lib/python3.12/site-packages/rfc3339_validator.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py', '.venv/lib/python3.12/site-packages/websockets/headers.py', '.venv/lib/python3.12/site-packages/websockets/datastructures.py', '.venv/lib/python3.12/site-packages/websockets/protocol.py', '.venv/lib/python3.12/site-packages/websockets/sync/router.py', '.venv/lib/python3.12/site-packages/click/_termui_impl.py', '.venv/lib/python3.12/site-packages/click/core.py', '.venv/lib/python3.12/site-packages/click/_compat.py', '.venv/lib/python3.12/site-packages/click/exceptions.py', '.venv/lib/python3.12/site-packages/click/formatting.py', '.venv/lib/python3.12/site-packages/click/types.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/compatibility.py', '.venv/lib/python3.12/site-packages/websockets/sync/connection.py', '.venv/lib/python3.12/site-packages/jsonpatch.py', '.venv/lib/python3.12/site-packages/websockets/imports.py', '.venv/lib/python3.12/site-packages/websockets/http11.py', '.venv/lib/python3.12/site-packages/websockets/legacy/exceptions.py', '.venv/lib/python3.12/site-packages/websockets/sync/utils.py', '.venv/lib/python3.12/site-packages/click/_textwrap.py', '.venv/lib/python3.12/site-packages/websockets/extensions/base.py', '.venv/lib/python3.12/site-packages/click/_winconsole.py', '.venv/lib/python3.12/site-packages/six.py', '.venv/lib/python3.12/site-packages/websockets/client.py', '.venv/lib/python3.12/site-packages/click/globals.py', '.venv/lib/python3.12/site-packages/websockets/extensions/permessage_deflate.py', '.venv/lib/python3.12/site-packages/websockets/legacy/server.py', '.venv/lib/python3.12/site-packages/websockets/utils.py', '.venv/lib/python3.12/site-packages/websockets/__init__.py', '.venv/lib/python3.12/site-packages/websockets/proxy.py', '.venv/lib/python3.12/site-packages/websockets/sync/__init__.py', '.venv/lib/python3.12/site-packages/websockets/sync/server.py', '.venv/lib/python3.12/site-packages/websockets/exceptions.py', '.venv/lib/python3.12/site-packages/websockets/sync/client.py', '.venv/lib/python3.12/site-packages/websockets/typing.py', '.venv/lib/python3.12/site-packages/websockets/uri.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/router.py', '.venv/lib/python3.12/site-packages/jsonpointer.py', '.venv/lib/python3.12/site-packages/websockets/frames.py', '.venv/lib/python3.12/site-packages/websockets/auth.py', '.venv/lib/python3.12/site-packages/websockets/legacy/handshake.py', '.venv/lib/python3.12/site-packages/click/__init__.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/client.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/messages.py', '.venv/lib/python3.12/site-packages/websockets/extensions/__init__.py', '.venv/lib/python3.12/site-packages/websockets/server.py', '.venv/lib/python3.12/site-packages/websockets/cli.py', '.venv/lib/python3.12/site-packages/websockets/streams.py', '.venv/lib/python3.12/site-packages/click/testing.py', '.venv/lib/python3.12/site-packages/websockets/connection.py', '.venv/lib/python3.12/site-packages/click/_utils.py', '.venv/lib/python3.12/site-packages/websockets/sync/messages.py', '.venv/lib/python3.12/site-packages/websockets/asyncio/async_timeout.py', '.venv/lib/python3.12/site-packages/websockets/http.py', '.venv/lib/python3.12/site-packages/websockets/legacy/__init__.py', '.venv/lib/python3.12/site-packages/click/parser.py', '.venv/lib/python3.12/site-packages/click/termui.py', '.venv/lib/python3.12/site-packages/websockets/legacy/framing.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63628]
+INFO:     Started server process [63958]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scripts/deploy_ingest.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63958]
+INFO:     Started server process [63995]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'scripts/deploy_ingest.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [63995]
+INFO:     Started server process [64015]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64015]
+INFO:     Stopping reloader process [56535]

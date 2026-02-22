@@ -41,11 +41,14 @@ async def get_electricity(
     """Return electricity data from the EIA API (e.g. retail sales, prices).
 
     Data is fetched from the EIA electricity route, by default the
-    ``retail-sales`` dataset. Query parameters map to EIA facets and pagination.
-    A valid ``EIA_API_KEY`` must be set in the environment or the API will
-    return 403. EIA errors (e.g. 403, 500) are surfaced with the same status code.
+    ``retail-sales/data`` endpoint which returns time-series rows (response.data
+    array and response.total). Use the ``/data`` subpath to get actual data;
+    without it the API returns dataset metadata only. Query parameters map to
+    EIA facets and pagination. A valid ``EIA_API_KEY`` must be set in the
+    environment or the API will return 403. EIA errors (e.g. 403, 500) are
+    surfaced with the same status code.
 
-    :param subpath: Optional EIA path under electricity (default ``retail-sales``).
+    :param subpath: Optional EIA path under electricity (default ``retail-sales/data``).
     :param state_id: Optional state facet (e.g. ``CO`` for Colorado).
     :param sector_id: Optional sector facet (e.g. ``RES`` for residential).
     :param length: Optional maximum number of rows (EIA max 5000).
@@ -64,6 +67,6 @@ async def get_electricity(
     if offset is not None:
         params["offset"] = offset
     try:
-        return await manager.get_electricity(subpath=subpath or "retail-sales", **params)
+        return await manager.get_electricity(subpath=subpath or "retail-sales/data", **params)
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=str(e)) from e

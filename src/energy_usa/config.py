@@ -38,3 +38,7 @@ class Settings(BaseSettings):
 
     eia_max_retries: int = 3
     """Number of retry attempts for failed EIA requests (5xx, timeouts, connection errors)."""
+
+    database_url: str = ""
+    """PostgreSQL connection URL for the application database (ingest and future read endpoints).
+    Example: postgresql://user:password@host:5432/energy_usa. Empty means DB features are disabled."""
