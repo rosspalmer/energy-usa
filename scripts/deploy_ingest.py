@@ -12,18 +12,21 @@ Or from repo root with env set:
 """
 import asyncio
 
-from prefect.deployments.runner import RunnerDeployment
+from prefect.deployments.runner import EntrypointType, RunnerDeployment
 
 from energy_usa.flows.eia_retail_sales import ingest_eia_retail_sales
 
 
 async def main() -> None:
+    # Use MODULE_PATH so the worker loads the flow by importing the installed package
+    # instead of a file path (which fails when Prefect uses a temp dir without our code).
     deployment = RunnerDeployment.from_flow(
         ingest_eia_retail_sales,
         name="ingest-eia-retail-sales",
         work_pool_name="process-pool",
         cron="0 0 1 * *",  # 1st of month at 00:00 UTC
         tags=["ingest", "eia"],
+        entrypoint_type=EntrypointType.MODULE_PATH,
     )
     await deployment.apply()
     print(
