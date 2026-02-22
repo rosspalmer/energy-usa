@@ -13,23 +13,21 @@ Live and historical US energy data API (FastAPI + EIA).
 
 ## Docker Compose
 
-Run Postgres, Prefect server, Prefect worker, the API, and pgweb (Postgres browser) on one machine:
+Use **`./dock.sh`** to manage the stack (or run `docker compose` directly):
 
 ```bash
-docker compose up -d
+./dock.sh up              # Start all services
+./dock.sh worker-pool     # Create Prefect process work pool (only needed once)
+./dock.sh deploy          # Register ingest deployments
+./dock.sh run ingest-eia-electricity-all   # Trigger a run
+./dock.sh logs [service]  # Tail logs; ./dock.sh help for all commands
 ```
 
 - API: http://localhost:8000  
 - Prefect UI: http://localhost:4200  
 - pgweb (Postgres browser): http://localhost:8080  
 
-Create the process work pool once so the worker can run flows:
-
-```bash
-docker compose run --rm prefect-worker prefect work-pool create process-pool --type process
-```
-
-Then deploy the ingest flow (from your host with `uv run` and `PREFECT_API_URL=http://localhost:4200/api`), or run it ad hoc from the Prefect UI.
+Or without the script: `docker compose up -d`, then create the work pool and run `PREFECT_API_URL=http://localhost:4200/api uv run python scripts/deploy_ingest.py` to deploy jobs.
 
 ## License
 
