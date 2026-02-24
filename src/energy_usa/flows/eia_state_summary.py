@@ -17,12 +17,9 @@ from energy_usa.eia.manager import EIAManager
 
 EIA_PAGE_LENGTH = 5000
 
-# Data columns to request from EIA state-electricity-profiles/summary/data.
-EIA_STATE_SUMMARY_DATA_COLUMNS = [
-    "average-retail-price",
-    "total-generation",
-    "total-consumption",
-]
+# State-electricity-profiles/summary/data returns 400 if data[] is sent; request
+# all columns by omitting data[] and map the keys we need in the DB layer.
+# Expected keys in response: period, stateid, average-retail-price, total-generation, total-consumption (or equivalents).
 
 
 @task(name="fetch-eia-state-summary")
@@ -54,19 +51,30 @@ async def fetch_eia_state_summary(
             params: dict[str, Any] = {
                 "length": EIA_PAGE_LENGTH,
                 "offset": offset,
-                "data[]": EIA_STATE_SUMMARY_DATA_COLUMNS,
             }
             resp = await manager.get_electricity(
                 subpath="state-electricity-profiles/summary/data",
                 **params,
             )
-            response_body = resp.get("response") or {}
+            # EIA may wrap in "response" or return data/total at top level
+            response_body = resp.get("response") if "response" in resp else resp
+            response_body = response_body or {}
             data = response_body.get("data")
             if not isinstance(data, list):
                 data = []
             if not data:
                 break
-            all_data.extend(data)
+            # If API returns rows as arrays, convert using response columns (EIA v2 variant)
+            columns = response_body.get("columns")
+            if columns and isinstance(columns, list) and data and isinstance(data[0], (list, tuple)):
+                col_list = [c if isinstance(c, str) else str(c) for c in columns]
+                for row in data:
+                    if isinstance(row, (list, tuple)) and len(row) == len(col_list):
+                        all_data.append(dict(zip(col_list, row)))
+                    else:
+                        all_data.append({})
+            else:
+                all_data.extend(data)
             logger.info("Fetched page: offset=%s, rows=%s", offset, len(data))
             offset += len(data)
             total_available = response_body.get("total")
@@ -97,6 +105,12 @@ def upsert_state_summary_task(
     logger = get_run_logger()
     if not rows:
         return 0
+    # Log first row shape so we can see EIA's actual keys if upsert is 0
+    first = rows[0]
+    if isinstance(first, dict):
+        logger.info("First row keys: %s", list(first.keys()))
+    else:
+        logger.info("First row type: %s (len=%s)", type(first).__name__, len(first) if hasattr(first, "__len__") else "?")
     conn = get_connection(database_url)
     try:
         return upsert_state_summary(conn, rows)

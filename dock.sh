@@ -23,12 +23,15 @@ Commands:
   worker-pool     Create Prefect process work pool (idempotent; run once)
   deploy          Register Prefect ingest deployments (run after worker-pool)
   run <flow>      Trigger a deployment run (e.g. run ingest-eia-electricity-all)
+  cancel <id>     Cancel a flow run by ID (use when stuck in AwaitingRetry)
+  ensure-ingest-db  Create ingest database and tables (run if you see "database ingest does not exist")
 
 Examples:
   $0 up
   $0 up 3
   PREFECT_WORKERS=4 $0 up
   $0 run ingest-eia-electricity-all
+  $0 cancel 1a2b3c4d-5e6f-7890-abcd-ef1234567890
   $0 logs prefect-worker
 EOF
 }
@@ -94,6 +97,17 @@ cmd_run() {
   PREFECT_API_URL="$PREFECT_API_URL" prefect deployment run "$flow/$flow"
 }
 
+cmd_cancel() {
+  local run_id="${1:?Usage: $0 cancel <flow-run-id>}"
+  echo "Cancelling flow run: $run_id"
+  PREFECT_API_URL="${PREFECT_API_URL}" prefect flow-run cancel "$run_id"
+}
+
+cmd_ensure_ingest_db() {
+  echo "Creating ingest database and tables (idempotent)..."
+  $COMPOSE_CMD exec postgres bash -c 'export PGPASSWORD="$POSTGRES_PASSWORD"; psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE ingest;" 2>/dev/null || true; for f in /docker-entrypoint-initdb.d/ingest/*.sql; do psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d ingest -f "$f"; done; echo "Ingest database ready."'
+}
+
 case "${1:-}" in
   up)        cmd_up "$2" ;;
   down)      cmd_down ;;
@@ -103,6 +117,8 @@ case "${1:-}" in
   worker-pool) cmd_worker_pool ;;
   deploy)   cmd_deploy ;;
   run)      cmd_run "$2" ;;
+  cancel)   cmd_cancel "$2" ;;
+  ensure-ingest-db) cmd_ensure_ingest_db ;;
   -h|--help|help|"") usage ;;
   *)        echo "Unknown command: $1"; usage; exit 1 ;;
 esac

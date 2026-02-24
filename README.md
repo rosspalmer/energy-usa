@@ -24,13 +24,14 @@ Use **`./dock.sh`** to manage the stack (or run `docker compose` directly):
 ```
 
 - **Django web app** (dashboard): http://localhost:8000  
-- Prefect UI (job orchestration): http://localhost:4200  
-- pgweb (Postgres browser): http://localhost:8080  
+- **Prefect UI** (job orchestration): http://localhost:4200  
+- **pgweb** (Postgres browser): http://localhost:8080  
 
 To run the web app locally (with Postgres and data already present):  
 `uv sync --extra web` then `PYTHONPATH=web uv run python web/manage.py runserver`. Set `DATABASE_URL` in `.env` or the environment.
 
 Or without the script: `docker compose up -d`, then create the work pool and run `PREFECT_API_URL=http://localhost:4200/api uv run python scripts/deploy_ingest.py` to deploy jobs.
+
 
 ## License
 

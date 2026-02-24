@@ -1,8 +1,8 @@
 """
 State electricity Dash app: price, generation, consumption by state over time.
-Data from Postgres (eia_retail_sales, eia_electric_power_operational, eia_state_summary).
+Data from Postgres ingest database (eia_retail_sales, eia_electric_power_operational, eia_state_summary).
 """
-from django.db import connection
+from django.db import connections
 from django_plotly_dash import DjangoDash
 from dash import dcc, html, Input, Output
 import plotly.express as px
@@ -35,7 +35,7 @@ app.layout = html.Div(
 
 def _get_states():
     """Return list of state IDs from eia_retail_sales."""
-    with connection.cursor() as cur:
+    with connections["ingest"].cursor() as cur:
         cur.execute("SELECT DISTINCT stateid FROM eia_retail_sales ORDER BY stateid")
         return [row[0] for row in cur.fetchall()]
 
@@ -45,7 +45,7 @@ def _get_retail_price(state_ids):
     if not state_ids:
         return pd.DataFrame()
     placeholders = ",".join("%s" for _ in state_ids)
-    with connection.cursor() as cur:
+    with connections["ingest"].cursor() as cur:
         cur.execute(
             f"""
             SELECT period, stateid, AVG(price) AS avg_price
@@ -67,7 +67,7 @@ def _get_generation(state_ids):
     if not state_ids:
         return pd.DataFrame()
     placeholders = ",".join("%s" for _ in state_ids)
-    with connection.cursor() as cur:
+    with connections["ingest"].cursor() as cur:
         cur.execute(
             f"""
             SELECT period, stateid, SUM(generation) AS total_generation
@@ -89,7 +89,7 @@ def _get_summary_consumption(state_ids):
     if not state_ids:
         return pd.DataFrame()
     placeholders = ",".join("%s" for _ in state_ids)
-    with connection.cursor() as cur:
+    with connections["ingest"].cursor() as cur:
         cur.execute(
             f"""
             SELECT period, stateid, total_consumption, average_retail_price

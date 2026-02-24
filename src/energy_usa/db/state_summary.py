@@ -5,9 +5,12 @@ Expects row dicts with keys: period, stateid, and optionally average-retail-pric
 total-generation, total-consumption (EIA returns hyphenated keys; we map to snake_case).
 """
 
+import logging
 from typing import Any
 
 import psycopg
+
+logger = logging.getLogger(__name__)
 
 
 def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -36,15 +39,50 @@ def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
         total_consumption = EXCLUDED.total_consumption,
         ingested_at = now()
     """
+    def _get(obj: dict[str, Any], *keys: str) -> Any:
+        for k in keys:
+            if k in obj and obj[k] is not None:
+                return obj[k]
+        return None
+
+    def _get_ci(obj: dict[str, Any], *names: str) -> Any:
+        """Get first non-None value by key, case-insensitive (normalize to lower)."""
+        lower_map = {k.lower(): (k, v) for k, v in obj.items() if v is not None}
+        for name in names:
+            key = name.lower()
+            if key in lower_map:
+                return lower_map[key][1]
+        return None
+
     normalized = []
     for r in rows:
+        if not isinstance(r, dict):
+            continue
+        # Prefer exact keys, then fall back to case-insensitive (EIA may vary casing)
+        stateid = _get(r, "stateid", "stateId", "state", "State", "STATE") or _get_ci(r, "stateid", "stateId", "state")
+        period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
+        if stateid is not None:
+            stateid = str(stateid).strip()
+        if period is not None:
+            period = str(period).strip()
+        if not stateid or not period:
+            continue
         normalized.append({
-            "period": r.get("period"),
-            "stateid": r.get("stateid") or r.get("state"),
-            "average_retail_price": r.get("average-retail-price") or r.get("average_retail_price"),
-            "total_generation": r.get("total-generation") or r.get("total_generation"),
-            "total_consumption": r.get("total-consumption") or r.get("total_consumption"),
+            "period": period,
+            "stateid": stateid,
+            "average_retail_price": _get(r, "average-retail-price", "average_retail_price") or _get_ci(r, "average-retail-price", "average_retail_price"),
+            "total_generation": _get(r, "total-generation", "total_generation") or _get_ci(r, "total-generation", "total_generation"),
+            "total_consumption": _get(r, "total-consumption", "total_consumption") or _get_ci(r, "total-consumption", "total_consumption"),
         })
+    if not normalized and rows:
+        sample = rows[0]
+        logger.warning(
+            "eia_state_summary: all %s rows skipped (missing period/stateid); sample keys: %s",
+            len(rows),
+            list(sample.keys()) if isinstance(sample, dict) else type(sample),
+        )
+    if not normalized:
+        return 0
     with conn.cursor() as cur:
         cur.executemany(sql, normalized)
     conn.commit()

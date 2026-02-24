@@ -36,28 +36,39 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Database: same Postgres as ingest
+# Database: default = Django tables (energy_usa); ingest = EIA API-pulled data.
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://energy:energy@localhost:5432/energy_usa",
 )
-# Parse DATABASE_URL for Django DATABASES
-if "postgresql://" in DATABASE_URL or "postgres://" in DATABASE_URL:
-    import re
-    url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+INGEST_DATABASE_URL = os.environ.get(
+    "INGEST_DATABASE_URL",
+    DATABASE_URL.replace("/energy_usa", "/ingest").replace("/energy_usa?", "/ingest?"),
+)
+import re
+
+def _parse_pg_url(url):
+    url = url.replace("postgres://", "postgresql://", 1)
     m = re.match(r"postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)", url)
-    if m:
-        user, password, host, port, dbname = m.groups()
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.postgresql",
-                "NAME": dbname.split("?")[0],
-                "USER": user,
-                "PASSWORD": password,
-                "HOST": host,
-                "PORT": port,
-            }
-        }
+    if not m:
+        return None
+    user, password, host, port, dbname = m.groups()
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": dbname.split("?")[0],
+        "USER": user,
+        "PASSWORD": password,
+        "HOST": host,
+        "PORT": port,
+    }
+
+if "postgresql://" in DATABASE_URL or "postgres://" in DATABASE_URL:
+    default_cfg = _parse_pg_url(DATABASE_URL)
+    if default_cfg:
+        DATABASES = {"default": default_cfg}
+        ingest_cfg = _parse_pg_url(INGEST_DATABASE_URL)
+        if ingest_cfg:
+            DATABASES["ingest"] = ingest_cfg
     else:
         DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:
