@@ -2,6 +2,7 @@
 
 Runs on a monthly schedule (or on-demand). Paginates the EIA
 state-electricity-profiles/summary/data endpoint and upserts into eia_state_summary.
+Default date range is last calendar month; pass date_start/date_end for backfill.
 Requires EIA_API_KEY and DATABASE_URL.
 """
 
@@ -14,6 +15,7 @@ from prefect.logging import get_run_logger
 from energy_usa.config import Settings
 from energy_usa.db import get_connection, upsert_state_summary
 from energy_usa.eia.manager import EIAManager
+from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
 
@@ -31,9 +33,13 @@ async def fetch_eia_state_summary(
     max_concurrent: int,
     max_retries: int,
     page_delay_seconds: float = 0.0,
+    start: str,
+    end: str,
 ) -> list[dict[str, Any]]:
-    """Fetch all EIA state-electricity-profiles summary data via pagination.
+    """Fetch EIA state-electricity-profiles summary data for the given date range via pagination.
 
+    :param start: Start period (YYYY-MM) for EIA API.
+    :param end: End period (YYYY-MM) for EIA API.
     :returns: Combined list of row dicts from all pages.
     """
     logger = get_run_logger()
@@ -51,6 +57,8 @@ async def fetch_eia_state_summary(
             params: dict[str, Any] = {
                 "length": EIA_PAGE_LENGTH,
                 "offset": offset,
+                "start": start,
+                "end": end,
             }
             resp = await manager.get_electricity(
                 subpath="state-electricity-profiles/summary/data",
@@ -119,12 +127,18 @@ def upsert_state_summary_task(
 
 
 @flow(name="ingest-eia-state-summary", retries=2)
-async def ingest_eia_state_summary() -> int:
-    """Fetch all EIA state-electricity-profiles summary data and upsert into Postgres.
+async def ingest_eia_state_summary(
+    date_start: str | None = None,
+    date_end: str | None = None,
+) -> int:
+    """Fetch EIA state-electricity-profiles summary data and upsert into Postgres.
 
-    Paginates with length=5000 and offset until no more rows. Idempotent via
-    upsert on (period, stateid).
+    Default date range is last calendar month. Pass date_start/date_end (YYYY-MM)
+    for backfill. Paginates with length=5000 and offset until no more rows.
+    Idempotent via upsert on (period, stateid).
 
+    :param date_start: Optional start period (YYYY-MM). Defaults to last month.
+    :param date_end: Optional end period (YYYY-MM). Defaults to last month.
     :returns: Total number of rows upserted.
     """
     logger = get_run_logger()
@@ -134,6 +148,9 @@ async def ingest_eia_state_summary() -> int:
     if not settings.database_url:
         raise ValueError("DATABASE_URL is required for ingest_eia_state_summary")
 
+    start, end = resolve_date_range(date_start, date_end)
+    logger.info("Ingest date range: start=%s end=%s", start, end)
+
     data = await fetch_eia_state_summary(
         base_url=settings.eia_base_url,
         api_key=settings.eia_api_key,
@@ -141,6 +158,8 @@ async def ingest_eia_state_summary() -> int:
         max_concurrent=settings.eia_max_concurrent_requests,
         max_retries=settings.eia_max_retries,
         page_delay_seconds=settings.eia_page_delay_seconds,
+        start=start,
+        end=end,
     )
     total = upsert_state_summary_task(settings.database_url, data)
     logger.info("Ingest complete: total rows upserted=%s", total)
