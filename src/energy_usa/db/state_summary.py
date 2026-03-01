@@ -59,12 +59,15 @@ def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
         if not isinstance(r, dict):
             continue
         # Prefer exact keys, then fall back to case-insensitive (EIA may vary casing)
-        stateid = _get(r, "stateid", "stateId", "state", "State", "STATE") or _get_ci(r, "stateid", "stateId", "state")
+        stateid = _get(r, "stateid", "stateId", "stateID", "state", "State", "STATE") or _get_ci(r, "stateid", "stateId", "state")
         period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
         if stateid is not None:
             stateid = str(stateid).strip()
         if period is not None:
             period = str(period).strip()
+            # EIA annual data returns period as "2024"; normalize to YYYY-MM for consistency
+            if len(period) == 4 and period.isdigit():
+                period = f"{period}-01"
         if not stateid or not period:
             continue
         normalized.append({

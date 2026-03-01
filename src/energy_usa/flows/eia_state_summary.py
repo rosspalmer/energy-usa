@@ -22,6 +22,7 @@ EIA_PAGE_LENGTH = 5000
 # State-electricity-profiles/summary/data returns 400 if data[] is sent; request
 # all columns by omitting data[] and map the keys we need in the DB layer.
 # Expected keys in response: period, stateid, average-retail-price, total-generation, total-consumption (or equivalents).
+# This dataset is annual-only per EIA; we request frequency=annual and convert date range to years.
 
 
 @task(name="fetch-eia-state-summary")
@@ -57,6 +58,7 @@ async def fetch_eia_state_summary(
             params: dict[str, Any] = {
                 "length": EIA_PAGE_LENGTH,
                 "offset": offset,
+                "frequency": "annual",
                 "start": start,
                 "end": end,
             }
@@ -70,6 +72,12 @@ async def fetch_eia_state_summary(
             data = response_body.get("data")
             if not isinstance(data, list):
                 data = []
+            if offset == 0:
+                logger.info(
+                    "EIA state-summary first page: data_len=%s total=%s",
+                    len(data),
+                    response_body.get("total"),
+                )
             if not data:
                 break
             # If API returns rows as arrays, convert using response columns (EIA v2 variant)
@@ -149,7 +157,10 @@ async def ingest_eia_state_summary(
         raise ValueError("DATABASE_URL is required for ingest_eia_state_summary")
 
     start, end = resolve_date_range(date_start, date_end)
-    logger.info("Ingest date range: start=%s end=%s", start, end)
+    # State-electricity-profiles/summary is annual-only: use year range for API
+    start_year = start[:4] if start else ""
+    end_year = end[:4] if end else ""
+    logger.info("Ingest date range: start=%s end=%s (API years: %s–%s)", start, end, start_year, end_year)
 
     data = await fetch_eia_state_summary(
         base_url=settings.eia_base_url,
@@ -158,8 +169,8 @@ async def ingest_eia_state_summary(
         max_concurrent=settings.eia_max_concurrent_requests,
         max_retries=settings.eia_max_retries,
         page_delay_seconds=settings.eia_page_delay_seconds,
-        start=start,
-        end=end,
+        start=start_year,
+        end=end_year,
     )
     total = upsert_state_summary_task(settings.database_url, data)
     logger.info("Ingest complete: total rows upserted=%s", total)
