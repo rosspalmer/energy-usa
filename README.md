@@ -10,6 +10,49 @@ Live and historical US energy data in Postgres (ingested via Prefect from EIA). 
     - `cp .env.example .env`
     - Must update `EIA_API_KEY` with key from #2
     - May set custom postgres username/password (OPTIONAL)
+4. Start the initial Docker Compose stack
+    - `./dock.sh up`
+5. Create Prefect work pool (one-time setup)
+    - `./dock.sh worker-pool`
+6. Deploy ingest flows to Prefect
+    - `./dock.sh deploy`
+7. Run initial data backfill (all electricity datasets)
+    - `./dock.sh run ingest-eia-electricity-all`
+
+## Architecture
+
+```mermaid
+flowchart LR
+    EIA[EIA Open Data API] --> Prefect[Prefect Flows/Tasks]
+    Prefect --> PG[(Postgres)]
+    PG --> Django[Django App]
+    Django --> Dash[Dash/Plotly Dashboard]
+
+    User[User Browser] --> Django
+    Worker[Prefect Process Worker] --> Prefect
+    PrefectUI[Prefect UI] --> Prefect
+    Pgweb[pgweb] --> PG
+```
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Scheduler as Prefect Deployment/Scheduler
+    participant Worker as Prefect Worker
+    participant EIA as EIA API
+    participant DB as Postgres
+    participant Web as Django + Dash
+
+    Scheduler->>Worker: Start ingest flow run
+    Worker->>EIA: Request paginated electricity data
+    EIA-->>Worker: Return dataset rows
+    Worker->>DB: Upsert raw/normalized records
+    Worker->>DB: Commit backfill batches
+    Web->>DB: Query dashboard data
+    DB-->>Web: Return time-series results
+```
 
 ## Docker Compose
 

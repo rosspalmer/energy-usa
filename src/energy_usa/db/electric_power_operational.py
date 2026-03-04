@@ -6,11 +6,39 @@ Rows without a valid stateid (e.g. national "ALL" totals) are skipped; table sto
 """
 
 import logging
+import json
+import time
 from typing import Any
 
 import psycopg
 
 logger = logging.getLogger(__name__)
+DEBUG_LOG_PATH = "/Users/rpalmer/repo/energy-usa/.cursor/debug-c40a77.log"
+DEBUG_SESSION_ID = "c40a77"
+
+
+def _agent_debug_log(
+    *,
+    run_id: str,
+    hypothesis_id: str,
+    location: str,
+    message: str,
+    data: dict[str, Any],
+) -> None:
+    try:
+        payload = {
+            "sessionId": DEBUG_SESSION_ID,
+            "runId": run_id,
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload) + "\n")
+    except Exception:
+        pass
 
 
 def _get(obj: dict[str, Any], *keys: str) -> Any:
@@ -47,6 +75,7 @@ def upsert_electric_power_operational(
     """
     if not rows:
         return 0
+    run_id = "electric_power_operational:upsert"
     sql = """
     INSERT INTO eia_electric_power_operational (
         period, stateid, sectorid, fueltypeid, generation, ingested_at
@@ -58,6 +87,8 @@ def upsert_electric_power_operational(
         ingested_at = now()
     """
     normalized = []
+    skipped_missing_state = 0
+    skipped_missing_required = 0
     for r in rows:
         if not isinstance(r, dict):
             continue
@@ -71,6 +102,7 @@ def upsert_electric_power_operational(
             period = str(period).strip()
         # Skip national totals (ALL) or rows missing state; table is state-level only
         if not stateid or stateid.upper() == "ALL":
+            skipped_missing_state += 1
             continue
         sectorid = _get(r, "sectorid", "sectorId") or _get_ci(r, "sectorid", "sectorId")
         fueltypeid = _get(r, "fueltypeid", "fueltypeId", "typeid", "typeId") or _get_ci(
@@ -81,6 +113,7 @@ def upsert_electric_power_operational(
         if fueltypeid is not None:
             fueltypeid = str(fueltypeid).strip()
         if not period or sectorid is None or fueltypeid is None:
+            skipped_missing_required += 1
             continue
         generation = _get(r, "generation", "net-generation") or _get_ci(
             r, "generation", "net-generation"
@@ -100,7 +133,38 @@ def upsert_electric_power_operational(
             list(sample.keys()) if isinstance(sample, dict) else type(sample),
         )
     if not normalized:
+        sample_keys = list(rows[0].keys()) if rows and isinstance(rows[0], dict) else []
+        # region agent log
+        _agent_debug_log(
+            run_id=run_id,
+            hypothesis_id="H1",
+            location="electric_power_operational.py:normalize",
+            message="All rows skipped during normalization",
+            data={
+                "input_rows": len(rows),
+                "normalized_rows": 0,
+                "skipped_missing_state_or_all": skipped_missing_state,
+                "skipped_missing_required_fields": skipped_missing_required,
+                "sample_keys": sample_keys,
+            },
+        )
+        # endregion
         return 0
+    # region agent log
+    _agent_debug_log(
+        run_id=run_id,
+        hypothesis_id="H1",
+        location="electric_power_operational.py:normalize",
+        message="Normalization stats",
+        data={
+            "input_rows": len(rows),
+            "normalized_rows": len(normalized),
+            "skipped_missing_state_or_all": skipped_missing_state,
+            "skipped_missing_required_fields": skipped_missing_required,
+            "sample_keys": list(rows[0].keys()) if isinstance(rows[0], dict) else [],
+        },
+    )
+    # endregion
     with conn.cursor() as cur:
         cur.executemany(sql, normalized)
     conn.commit()

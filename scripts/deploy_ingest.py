@@ -14,6 +14,7 @@ import asyncio
 
 from prefect.deployments.runner import EntrypointType, RunnerDeployment
 
+from energy_usa.flows.backfill_eia import backfill_eia
 from energy_usa.flows.eia_electric_power_operational import ingest_eia_electric_power_operational
 from energy_usa.flows.eia_retail_sales import ingest_eia_retail_sales
 from energy_usa.flows.eia_state_source_disposition import ingest_eia_state_source_disposition
@@ -58,13 +59,22 @@ async def main() -> None:
             tags=["ingest", "eia"],
             entrypoint_type=EntrypointType.MODULE_PATH,
         ),
+        RunnerDeployment.from_flow(
+            backfill_eia,
+            name="backfill-eia",
+            work_pool_name="process-pool",
+            tags=["backfill", "eia"],
+            entrypoint_type=EntrypointType.MODULE_PATH,
+        ),
     ]
     for deployment in deployments:
         await deployment.apply()
     print(
-        "Deployments applied. All four run monthly (1st at 00:00 UTC). "
+        "Deployments applied. Four ingest deployments run monthly (1st at 00:00 UTC), "
+        "and one backfill deployment runs on demand. "
         "Trigger from Prefect UI or run individually, e.g. prefect deployment run 'ingest-eia-retail-sales/ingest-eia-retail-sales'. "
-        "For backfill, pass parameters: --param date_start=YYYY-MM --param date_end=YYYY-MM"
+        "For backfill, run 'backfill-eia/backfill-eia' with parameters: "
+        "--param date_start=YYYY-MM --param date_end=YYYY-MM --param chunk_months=N --param dataset=retail_sales|electric_power_operational|state_source_disposition|state_summary|all"
     )
 
 

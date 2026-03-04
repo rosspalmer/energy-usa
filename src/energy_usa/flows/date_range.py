@@ -7,7 +7,31 @@ the first period of the current month (end = current month) so the API returns r
 """
 
 from datetime import date
-from typing import Tuple
+from typing import Iterator, Tuple
+
+
+def _parse_period(period: str) -> date:
+    """Parse YYYY-MM into a month-start date."""
+    try:
+        year_str, month_str = period.split("-", maxsplit=1)
+        year = int(year_str)
+        month = int(month_str)
+        return date(year, month, 1)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid period '{period}'. Expected YYYY-MM.") from exc
+
+
+def _format_period(period: date) -> str:
+    """Format month-start date as YYYY-MM."""
+    return f"{period.year}-{period.month:02d}"
+
+
+def _add_months(start: date, months: int) -> date:
+    """Return a month-start date plus N months."""
+    zero_based = (start.year * 12 + (start.month - 1)) + months
+    year = zero_based // 12
+    month = (zero_based % 12) + 1
+    return date(year, month, 1)
 
 
 def resolve_date_range(
@@ -38,3 +62,34 @@ def resolve_date_range(
     start = date_start if date_start is not None else default_start
     end = date_end if date_end is not None else default_end
     return (start, end)
+
+
+def monthly_chunks(
+    date_start: str,
+    date_end: str,
+    chunk_months: int = 1,
+) -> Iterator[Tuple[str, str]]:
+    """Yield contiguous date chunks in YYYY-MM inclusive bounds.
+
+    :param date_start: Required start period (YYYY-MM).
+    :param date_end: Required end period (YYYY-MM).
+    :param chunk_months: Number of months per chunk; must be >= 1.
+    :returns: Iterator of (chunk_start, chunk_end) as YYYY-MM strings.
+    """
+    if chunk_months < 1:
+        raise ValueError("chunk_months must be >= 1")
+
+    start = _parse_period(date_start)
+    end = _parse_period(date_end)
+    if start > end:
+        raise ValueError("date_start must be less than or equal to date_end")
+
+    chunk_start = start
+    while chunk_start <= end:
+        # Inclusive month windows: +chunk_months then step back by one month.
+        chunk_end = _add_months(chunk_start, chunk_months)
+        chunk_end = _add_months(chunk_end, -1)
+        if chunk_end > end:
+            chunk_end = end
+        yield (_format_period(chunk_start), _format_period(chunk_end))
+        chunk_start = _add_months(chunk_end, 1)

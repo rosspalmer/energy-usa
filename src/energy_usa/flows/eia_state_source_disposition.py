@@ -7,6 +7,8 @@ pass date_start/date_end for backfill. Requires EIA_API_KEY and DATABASE_URL.
 """
 
 import asyncio
+import json
+import time
 from typing import Any
 
 from prefect import flow, task
@@ -18,9 +20,35 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
+DEBUG_LOG_PATH = "/Users/rpalmer/repo/energy-usa/.cursor/debug-c40a77.log"
+DEBUG_SESSION_ID = "c40a77"
 
 # Data columns to request; EIA returns hyphenated keys.
 EIA_SOURCE_DISPOSITION_DATA_COLUMNS = ["net-interstate-trade", "total-disposition"]
+
+
+def _agent_debug_log(
+    *,
+    run_id: str,
+    hypothesis_id: str,
+    location: str,
+    message: str,
+    data: dict[str, Any],
+) -> None:
+    try:
+        payload = {
+            "sessionId": DEBUG_SESSION_ID,
+            "runId": run_id,
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload) + "\n")
+    except Exception:
+        pass
 
 
 @task(name="fetch-eia-state-source-disposition")
@@ -42,6 +70,7 @@ async def fetch_eia_state_source_disposition(
     :returns: Combined list of row dicts from all pages.
     """
     logger = get_run_logger()
+    run_id = f"state_source_disposition:{start}->{end}"
     manager = EIAManager(
         base_url=base_url,
         api_key=api_key,
@@ -68,6 +97,24 @@ async def fetch_eia_state_source_disposition(
             data = response_body.get("data")
             if not isinstance(data, list):
                 data = []
+            if offset == 0:
+                first_row_keys = list(data[0].keys()) if data and isinstance(data[0], dict) else None
+                # region agent log
+                _agent_debug_log(
+                    run_id=run_id,
+                    hypothesis_id="H3,H4,H5",
+                    location="eia_state_source_disposition.py:fetch_page_0",
+                    message="First page response shape",
+                    data={
+                        "params": params,
+                        "resp_keys": list(resp.keys()),
+                        "response_keys": list(response_body.keys()) if isinstance(response_body, dict) else [],
+                        "data_len": len(data),
+                        "first_row_keys": first_row_keys,
+                        "total": response_body.get("total"),
+                    },
+                )
+                # endregion
             if not data:
                 break
             all_data.extend(data)
@@ -84,6 +131,15 @@ async def fetch_eia_state_source_disposition(
             if page_delay_seconds > 0:
                 await asyncio.sleep(page_delay_seconds)
         logger.info("Fetch complete: total rows=%s", len(all_data))
+        # region agent log
+        _agent_debug_log(
+            run_id=run_id,
+            hypothesis_id="H3,H4",
+            location="eia_state_source_disposition.py:fetch_complete",
+            message="Fetch complete",
+            data={"total_rows": len(all_data), "start": start, "end": end},
+        )
+        # endregion
         return all_data
     finally:
         await manager.aclose()
