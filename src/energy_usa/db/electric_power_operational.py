@@ -6,39 +6,11 @@ Rows without a valid stateid (e.g. national "ALL" totals) are skipped; table sto
 """
 
 import logging
-import json
-import time
 from typing import Any
 
 import psycopg
 
 logger = logging.getLogger(__name__)
-DEBUG_LOG_PATH = "/Users/rpalmer/repo/energy-usa/.cursor/debug-c40a77.log"
-DEBUG_SESSION_ID = "c40a77"
-
-
-def _agent_debug_log(
-    *,
-    run_id: str,
-    hypothesis_id: str,
-    location: str,
-    message: str,
-    data: dict[str, Any],
-) -> None:
-    try:
-        payload = {
-            "sessionId": DEBUG_SESSION_ID,
-            "runId": run_id,
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(payload) + "\n")
-    except Exception:
-        pass
 
 
 def _get(obj: dict[str, Any], *keys: str) -> Any:
@@ -75,7 +47,6 @@ def upsert_electric_power_operational(
     """
     if not rows:
         return 0
-    run_id = "electric_power_operational:upsert"
     sql = """
     INSERT INTO eia_electric_power_operational (
         period, stateid, sectorid, fueltypeid, generation, ingested_at
@@ -92,8 +63,8 @@ def upsert_electric_power_operational(
     for r in rows:
         if not isinstance(r, dict):
             continue
-        stateid = _get(r, "stateid", "stateId", "state", "State", "STATE") or _get_ci(
-            r, "stateid", "stateId", "state"
+        stateid = _get(r, "stateid", "stateId", "state", "State", "STATE", "location") or _get_ci(
+            r, "stateid", "stateId", "state", "location"
         )
         period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
         if stateid is not None:
@@ -133,38 +104,7 @@ def upsert_electric_power_operational(
             list(sample.keys()) if isinstance(sample, dict) else type(sample),
         )
     if not normalized:
-        sample_keys = list(rows[0].keys()) if rows and isinstance(rows[0], dict) else []
-        # region agent log
-        _agent_debug_log(
-            run_id=run_id,
-            hypothesis_id="H1",
-            location="electric_power_operational.py:normalize",
-            message="All rows skipped during normalization",
-            data={
-                "input_rows": len(rows),
-                "normalized_rows": 0,
-                "skipped_missing_state_or_all": skipped_missing_state,
-                "skipped_missing_required_fields": skipped_missing_required,
-                "sample_keys": sample_keys,
-            },
-        )
-        # endregion
         return 0
-    # region agent log
-    _agent_debug_log(
-        run_id=run_id,
-        hypothesis_id="H1",
-        location="electric_power_operational.py:normalize",
-        message="Normalization stats",
-        data={
-            "input_rows": len(rows),
-            "normalized_rows": len(normalized),
-            "skipped_missing_state_or_all": skipped_missing_state,
-            "skipped_missing_required_fields": skipped_missing_required,
-            "sample_keys": list(rows[0].keys()) if isinstance(rows[0], dict) else [],
-        },
-    )
-    # endregion
     with conn.cursor() as cur:
         cur.executemany(sql, normalized)
     conn.commit()
