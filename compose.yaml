@@ -65,6 +65,21 @@ services:
       postgres:
         condition: service_healthy
 
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}
+      INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
+    volumes:
+      - ./notebooks:/app/notebooks
+    ports:
+      - "8888:8888"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   pgweb:
     image: sosedoff/pgweb:latest
     environment:

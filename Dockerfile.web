@@ -1,5 +1,7 @@
 # Django+Dash web app: install deps with uv (including web extra), run gunicorn.
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+# Use python:3.12-slim and install uv via pip to avoid pulling from ghcr.io (helps with proxy/firewall).
+FROM python:3.12-slim AS builder
+RUN pip install --no-cache-dir uv
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1
 COPY pyproject.toml uv.lock ./

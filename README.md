@@ -68,6 +68,7 @@ Use **`./dock.sh`** to manage the stack (or run `docker compose` directly):
 
 - **Django web app** (dashboard): http://localhost:8000  
 - **Prefect UI** (job orchestration): http://localhost:4200  
+- **Jupyter** (notebooks): http://localhost:8888  
 - **pgweb** (Postgres browser): http://localhost:8080  
 
 To run the web app locally (with Postgres and data already present):  
@@ -75,6 +76,34 @@ To run the web app locally (with Postgres and data already present):
 
 Or without the script: `docker compose up -d`, then create the work pool and run `PREFECT_API_URL=http://localhost:4200/api uv run python scripts/deploy_ingest.py` to deploy jobs.
 
+### Jupyter notebooks
+
+Notebooks run in the `jupyter` service and can query Postgres via the project helper. Use the `notebooks/` directory (mounted at `/app/notebooks` in the container); set `DATABASE_URL` or `INGEST_DATABASE_URL` from the environment. Example in a notebook cell:
+
+```python
+import os
+from energy_usa.db import query_to_dataframe
+
+url = os.environ["INGEST_DATABASE_URL"]
+df = query_to_dataframe(url, "SELECT period, stateid, sectorid, sales FROM eia_retail_sales LIMIT 100")
+df.head()
+```
+
+See [.cursor/skills/jupyter-postgres/SKILL.md](.cursor/skills/jupyter-postgres/SKILL.md) for the full notebook and Postgres workflow.
+
+### Docker build: proxy / `http.docker.internal` errors
+
+If `docker compose up` or `./dock.sh up` fails with:
+
+```text
+failed to resolve source metadata for ... proxyconnect tcp: dial tcp: lookup http.docker.internal ... connection refused
+```
+
+Docker is trying to use a proxy (often `http.docker.internal`) and the proxy or Docker’s internal DNS is unreachable. Fix it on your machine:
+
+1. **Docker Desktop** → Settings → Resources → **Proxies**: turn off “Manual proxy configuration” if you don’t need it, or set **Bypass** for `registry-1.docker.io` and `ghcr.io` so image pulls don’t go through the proxy.
+2. **Environment**: Unset `HTTP_PROXY` / `HTTPS_PROXY` (and `http_proxy` / `https_proxy`) in the shell before running `docker compose`, or set `NO_PROXY=*` so the daemon doesn’t use the proxy for registry requests.
+3. Restart Docker Desktop after changing proxy settings, then run `./dock.sh up` again.
 
 ## License
 

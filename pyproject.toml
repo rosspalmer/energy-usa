@@ -24,6 +24,10 @@ web = [
     "psycopg[binary]>=3.1.0",
     "gunicorn>=22.0",
 ]
+notebook = [
+    "jupyterlab>=4.0",
+    "ipykernel>=6.0",
+]
 
 [build-system]
 requires = ["hatchling"]
