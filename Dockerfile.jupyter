@@ -19,4 +19,4 @@ COPY --from=builder /app/pyproject.toml /app/
 RUN mkdir -p /app/notebooks
 EXPOSE 8888
 # No token/password for local-dev compose; bind all interfaces.
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--ServerApp.token=", "--ServerApp.password="]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--ServerApp.token=", "--ServerApp.password="]
