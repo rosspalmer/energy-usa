@@ -2,11 +2,14 @@
 
 Uses the eia_retail_sales table with unique (period, stateid, sectorid).
 Expects row dicts with keys: period, stateid, sectorid, revenue, sales, price, customers.
+Period is stored as DATE (first day of month); cadence is monthly.
 """
 
 from typing import Any
 
 import psycopg
+
+from energy_usa.db.period import normalize_period
 from psycopg.rows import dict_row
 
 
@@ -38,7 +41,7 @@ def upsert_retail_sales(conn: psycopg.Connection, rows: list[dict[str, Any]]) ->
     VALUES (%(period)s, %(stateid)s, %(sectorid)s, %(revenue)s, %(sales)s, %(price)s, %(customers)s, now())
     ON CONFLICT (period, stateid, sectorid)
     DO UPDATE SET
-        revenue = EXCLUDED.revenue,
+        revenue = EXCLUDED.revenue, 
         sales = EXCLUDED.sales,
         price = EXCLUDED.price,
         customers = EXCLUDED.customers,
@@ -46,8 +49,11 @@ def upsert_retail_sales(conn: psycopg.Connection, rows: list[dict[str, Any]]) ->
     """
     normalized = []
     for r in rows:
+        period_date = normalize_period(r.get("period"), "monthly")
+        if period_date is None:
+            continue
         normalized.append({
-            "period": r.get("period"),
+            "period": period_date,
             "stateid": r.get("stateid"),
             "sectorid": r.get("sectorid"),
             "revenue": r.get("revenue"),
@@ -55,6 +61,8 @@ def upsert_retail_sales(conn: psycopg.Connection, rows: list[dict[str, Any]]) ->
             "price": r.get("price"),
             "customers": r.get("customers"),
         })
+    if not normalized:
+        return 0
     with conn.cursor() as cur:
         cur.executemany(sql, normalized)
     conn.commit()

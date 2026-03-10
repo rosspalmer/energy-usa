@@ -1,7 +1,7 @@
 -- Ingest table for EIA electricity retail-sales data.
 -- Unique on (period, stateid, sectorid) for idempotent upserts.
 CREATE TABLE IF NOT EXISTS eia_retail_sales (
-    period TEXT NOT NULL,
+    period DATE NOT NULL,
     stateid TEXT NOT NULL,
     sectorid TEXT NOT NULL,
     revenue NUMERIC,

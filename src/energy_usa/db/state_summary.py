@@ -3,12 +3,15 @@
 Uses the eia_state_summary table with unique (period, stateid).
 Expects row dicts with keys: period, stateid, and optionally average-retail-price,
 total-generation, total-consumption (EIA returns hyphenated keys; we map to snake_case).
+Period is stored as DATE (Jan 1 for annual); cadence is yearly.
 """
 
 import logging
 from typing import Any
 
 import psycopg
+
+from energy_usa.db.period import normalize_period
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +63,16 @@ def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             continue
         # Prefer exact keys, then fall back to case-insensitive (EIA may vary casing)
         stateid = _get(r, "stateid", "stateId", "stateID", "state", "State", "STATE") or _get_ci(r, "stateid", "stateId", "state")
-        period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
+        raw_period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
         if stateid is not None:
             stateid = str(stateid).strip()
-        if period is not None:
-            period = str(period).strip()
-            # EIA annual data returns period as "2024"; normalize to YYYY-MM for consistency
-            if len(period) == 4 and period.isdigit():
-                period = f"{period}-01"
-        if not stateid or not period:
+        if raw_period is not None:
+            raw_period = str(raw_period).strip()
+        period_date = normalize_period(raw_period, "yearly")
+        if not stateid or period_date is None:
             continue
         normalized.append({
-            "period": period,
+            "period": period_date,
             "stateid": stateid,
             "average_retail_price": _get(r, "average-retail-price", "average_retail_price") or _get_ci(r, "average-retail-price", "average_retail_price"),
             "total_generation": _get(r, "total-generation", "total_generation") or _get_ci(r, "total-generation", "total_generation"),

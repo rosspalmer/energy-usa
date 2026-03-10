@@ -1,7 +1,7 @@
 -- Ingest table for EIA electricity electric-power-operational-data (generation by state/sector/fuel).
 -- Unique on (period, stateid, sectorid, fueltypeid) for idempotent upserts.
 CREATE TABLE IF NOT EXISTS eia_electric_power_operational (
-    period TEXT NOT NULL,
+    period DATE NOT NULL,
     stateid TEXT NOT NULL,
     sectorid TEXT NOT NULL,
     fueltypeid TEXT NOT NULL,

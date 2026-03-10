@@ -1,2 +1,3 @@
 -- Create the ingest database for EIA API-pulled data (Prefect worker writes here).
-CREATE DATABASE ingest;
+SELECT 'CREATE DATABASE ingest'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ingest')\gexec

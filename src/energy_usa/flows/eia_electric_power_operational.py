@@ -1,5 +1,6 @@
 """Prefect flow: fetch EIA electric-power-operational-data and upsert into Postgres.
 
+Source cadence: monthly. Period is stored as DATE (first day of month).
 Runs on a monthly schedule (or on-demand). Paginates the EIA
 electric-power-operational-data/data endpoint and upserts into eia_electric_power_operational.
 Default date range is last calendar month; pass date_start/date_end for backfill.

@@ -1,5 +1,6 @@
 """Prefect flow: fetch EIA state-electricity-profiles source-disposition and upsert into Postgres.
 
+Source cadence: monthly. Period is stored as DATE (first day of month).
 Runs on a monthly schedule (or on-demand). Paginates the EIA
 state-electricity-profiles/source-disposition/data endpoint and upserts into
 eia_state_source_disposition. Default date range is last calendar month;

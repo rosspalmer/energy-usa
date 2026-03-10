@@ -62,8 +62,32 @@ Use **`./dock.sh`** to manage the stack (or run `docker compose` directly):
 ./dock.sh up              # Start all services
 ./dock.sh worker-pool     # Create Prefect process work pool (only needed once)
 ./dock.sh deploy          # Register ingest deployments
-./dock.sh run ingest-eia-electricity-all   # Trigger a run
+./dock.sh run backfill-eia --param date_start=2024-01 --param date_end=2024-12  # Run backfill for a date range
 ./dock.sh logs [service]  # Tail logs; ./dock.sh help for all commands
+```
+
+### Prefect job date ranges
+
+All ingest and backfill flows accept `date_start` / `date_end` in `YYYY-MM` format.
+
+- If omitted, defaults are resolved as:
+  - `date_start`: last calendar month
+  - `date_end`: current month
+- This default window ensures the prior completed month is included in EIA queries.
+- `ingest-eia-state-summary` requests EIA with `frequency=annual`, so the month range is converted to years internally, and `period` is stored as `DATE` on `YYYY-01-01`.
+- `backfill-eia` now supports omitted date parameters; when omitted it uses the same default range behavior, then splits the resolved window by `chunk_months`.
+
+Examples:
+
+```bash
+# Use defaults (last calendar month -> current month)
+./dock.sh run backfill-eia
+
+# Explicit monthly range across all datasets
+./dock.sh run backfill-eia --param date_start=2024-01 --param date_end=2024-12 --param dataset=all
+
+# Chunk a long range into quarterly runs (3 months per child run)
+./dock.sh run backfill-eia --param date_start=2020-01 --param date_end=2024-12 --param chunk_months=3 --param dataset=retail_sales
 ```
 
 - **Django web app** (dashboard): http://localhost:8000  

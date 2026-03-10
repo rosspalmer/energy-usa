@@ -2,6 +2,7 @@
 
 Uses the eia_electric_power_operational table with unique (period, stateid, sectorid, fueltypeid).
 Expects row dicts with keys: period, stateid, sectorid, fueltypeid, generation (from EIA data[]).
+Period is stored as DATE (first day of month); cadence is monthly.
 Rows without a valid stateid (e.g. national "ALL" totals) are skipped; table stores state-level only.
 """
 
@@ -9,6 +10,8 @@ import logging
 from typing import Any
 
 import psycopg
+
+from energy_usa.db.period import normalize_period
 
 logger = logging.getLogger(__name__)
 
@@ -66,11 +69,11 @@ def upsert_electric_power_operational(
         stateid = _get(r, "stateid", "stateId", "state", "State", "STATE", "location") or _get_ci(
             r, "stateid", "stateId", "state", "location"
         )
-        period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
+        raw_period = _get(r, "period", "periodId", "Period") or _get_ci(r, "period", "periodId")
         if stateid is not None:
             stateid = str(stateid).strip()
-        if period is not None:
-            period = str(period).strip()
+        if raw_period is not None:
+            raw_period = str(raw_period).strip()
         # Skip national totals (ALL) or rows missing state; table is state-level only
         if not stateid or stateid.upper() == "ALL":
             skipped_missing_state += 1
@@ -83,14 +86,15 @@ def upsert_electric_power_operational(
             sectorid = str(sectorid).strip()
         if fueltypeid is not None:
             fueltypeid = str(fueltypeid).strip()
-        if not period or sectorid is None or fueltypeid is None:
+        period_date = normalize_period(raw_period, "monthly")
+        if period_date is None or sectorid is None or fueltypeid is None:
             skipped_missing_required += 1
             continue
         generation = _get(r, "generation", "net-generation") or _get_ci(
             r, "generation", "net-generation"
         )
         normalized.append({
-            "period": period,
+            "period": period_date,
             "stateid": stateid,
             "sectorid": sectorid,
             "fueltypeid": fueltypeid,

@@ -1,5 +1,6 @@
 """Prefect flow: fetch EIA state-electricity-profiles summary and upsert into Postgres.
 
+Source cadence: annual (EIA frequency=annual). Period is stored as DATE (Jan 1 of year).
 Runs on a monthly schedule (or on-demand). Paginates the EIA
 state-electricity-profiles/summary/data endpoint and upserts into eia_state_summary.
 Default date range is last calendar month; pass date_start/date_end for backfill.
@@ -22,7 +23,7 @@ EIA_PAGE_LENGTH = 5000
 # State-electricity-profiles/summary/data returns 400 if data[] is sent; request
 # all columns by omitting data[] and map the keys we need in the DB layer.
 # Expected keys in response: period, stateid, average-retail-price, total-generation, total-consumption (or equivalents).
-# This dataset is annual-only per EIA; we request frequency=annual and convert date range to years.
+# Source frequency: annual. We request frequency=annual and convert date range to years; period is stored as DATE (Jan 1).
 
 
 @task(name="fetch-eia-state-summary")
@@ -141,6 +142,7 @@ async def ingest_eia_state_summary(
 ) -> int:
     """Fetch EIA state-electricity-profiles summary data and upsert into Postgres.
 
+    Source cadence: annual. Period is stored as DATE (Jan 1 of year).
     Default date range is last calendar month. Pass date_start/date_end (YYYY-MM)
     for backfill. Paginates with length=5000 and offset until no more rows.
     Idempotent via upsert on (period, stateid).
@@ -157,10 +159,13 @@ async def ingest_eia_state_summary(
         raise ValueError("DATABASE_URL is required for ingest_eia_state_summary")
 
     start, end = resolve_date_range(date_start, date_end)
-    # State-electricity-profiles/summary is annual-only: use year range for API
+    # Source cadence is annual: use year range for EIA API
     start_year = start[:4] if start else ""
     end_year = end[:4] if end else ""
-    logger.info("Ingest date range: start=%s end=%s (API years: %s–%s)", start, end, start_year, end_year)
+    logger.info(
+        "Ingest date range (source_frequency=annual): start=%s end=%s (API years: %s–%s)",
+        start, end, start_year, end_year,
+    )
 
     data = await fetch_eia_state_summary(
         base_url=settings.eia_base_url,

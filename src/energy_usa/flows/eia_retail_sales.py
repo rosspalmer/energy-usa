@@ -1,5 +1,6 @@
 """Prefect flow: fetch EIA electricity retail-sales data and upsert into Postgres.
 
+Source cadence: monthly. Period is stored as DATE (first day of month).
 Runs on a monthly schedule (or on-demand). Paginates the EIA retail-sales/data
 endpoint and upserts into eia_retail_sales. Default date range is last calendar
 month; pass date_start/date_end for backfill. Requires EIA_API_KEY and DATABASE_URL.

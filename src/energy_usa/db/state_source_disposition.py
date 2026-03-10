@@ -3,11 +3,14 @@
 Uses the eia_state_source_disposition table with unique (period, stateid).
 Expects row dicts with keys: period, stateid, net-interstate-trade, total-disposition
 (EIA returns hyphenated keys; we map to net_interstate_trade, total_disposition).
+Period is stored as DATE (first day of month); cadence is monthly.
 """
 
 from typing import Any
 
 import psycopg
+
+from energy_usa.db.period import normalize_period
 
 
 def upsert_state_source_disposition(
@@ -39,12 +42,17 @@ def upsert_state_source_disposition(
     """
     normalized = []
     for r in rows:
+        period_date = normalize_period(r.get("period"), "monthly")
+        if period_date is None:
+            continue
         normalized.append({
-            "period": r.get("period"),
+            "period": period_date,
             "stateid": r.get("stateid") or r.get("state"),
             "net_interstate_trade": r.get("net-interstate-trade") or r.get("net_interstate_trade"),
             "total_disposition": r.get("total-disposition") or r.get("total_disposition"),
         })
+    if not normalized:
+        return 0
     with conn.cursor() as cur:
         cur.executemany(sql, normalized)
     conn.commit()
