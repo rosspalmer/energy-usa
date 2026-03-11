@@ -69,6 +69,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.jupyter
+    env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}
       INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
