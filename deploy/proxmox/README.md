@@ -4,13 +4,14 @@ This guide walks through deploying Energy USA on a Proxmox server using LXC cont
 
 ## What Gets Created
 
-Three LXC containers, each with a dedicated job:
+Four LXC containers, each with a dedicated job:
 
 | Container | Default IP | What it runs |
 |-----------|-----------|--------------|
 | `energy-postgres` | 192.168.1.10 | PostgreSQL 16 (native, no Docker) |
 | `energy-app` | 192.168.1.11 | Prefect server + worker, Django web app, pgweb |
 | `energy-jupyter` | 192.168.1.12 | Jupyter Lab |
+| `energy-superset` | 192.168.1.13 | Apache Superset BI dashboard |
 
 Postgres is isolated in its own container so it can be given dedicated CPU/RAM resources and managed independently (backups, upgrades) without touching the app.
 
@@ -65,7 +66,7 @@ This creates and starts all three containers. You can verify with `pct list`.
 
 ## Step 4 — Push the Repo to Each Container
 
-The app and jupyter containers need the full repo. The postgres container only needs the schema SQL files.
+The app, jupyter, and superset containers need the full repo. The postgres container only needs the schema SQL files.
 
 ```bash
 # From your workstation — adjust paths and IPs to match your config
@@ -87,13 +88,17 @@ rsync -av --exclude='.git' --exclude='__pycache__' ./ root@192.168.1.11:/opt/ene
 # Same for jupyter container (VMID 202)
 pct exec 202 -- mkdir -p /opt/energy-usa
 rsync -av --exclude='.git' --exclude='__pycache__' ./ root@192.168.1.12:/opt/energy-usa/
+
+# Same for superset container (VMID 203)
+pct exec 203 -- mkdir -p /opt/energy-usa
+rsync -av --exclude='.git' --exclude='__pycache__' ./ root@192.168.1.13:/opt/energy-usa/
 ```
 
 ---
 
 ## Step 5 — Create the .env File on Each Container
 
-The app and jupyter containers each need a `.env` file at `/opt/energy-usa/.env`.
+The app, jupyter, and superset containers each need a `.env` file at `/opt/energy-usa/.env`.
 
 ```bash
 # On the app container (192.168.1.11)
@@ -107,6 +112,14 @@ nano /opt/energy-usa/.env
 ssh root@192.168.1.12
 cp /opt/energy-usa/deploy/proxmox/.env.production.example /opt/energy-usa/.env
 nano /opt/energy-usa/.env
+
+# On the superset container (192.168.1.13)
+ssh root@192.168.1.13
+cp /opt/energy-usa/deploy/proxmox/.env.production.example /opt/energy-usa/.env
+nano /opt/energy-usa/.env
+# Fill in: POSTGRES_HOST, POSTGRES_PASSWORD, SUPERSET_SECRET_KEY,
+#          SUPERSET_ADMIN_PASSWORD (and optionally SUPERSET_COOKIE_SECURE,
+#          SUPERSET_PROXY_FIX if behind a reverse proxy)
 ```
 
 Key values to set (see `.env.production.example` for all options):
@@ -119,6 +132,8 @@ Key values to set (see `.env.production.example` for all options):
 | `DJANGO_SECRET_KEY` | Run `python -c "import secrets; print(secrets.token_hex(50))"` |
 | `DJANGO_ALLOWED_HOSTS` | App container IP + any domain name |
 | `ANTHROPIC_API_KEY` | For jupyter-ai Claude integration |
+| `SUPERSET_SECRET_KEY` | Run `python -c "import secrets; print(secrets.token_hex(42))"` |
+| `SUPERSET_ADMIN_PASSWORD` | Strong password for the Superset admin UI login |
 
 ---
 
@@ -161,7 +176,27 @@ bash /opt/energy-usa/deploy/proxmox/provision/jupyter.sh
 
 ---
 
-## Step 9 — Run the Initial Data Backfill
+## Step 9 — Provision Superset (superset container)
+
+```bash
+ssh root@192.168.1.13
+cd /opt/energy-usa
+bash deploy/proxmox/provision/superset.sh
+```
+
+This installs Docker, pulls the Superset image, runs one-shot init (creates admin user, seeds the `EIA Ingest` and `Energy USA App` database connections), and starts the persistent service under systemd.
+
+**Authentication**: Superset uses username/password login by default. Log in with `SUPERSET_ADMIN_USER` / `SUPERSET_ADMIN_PASSWORD` from your `.env`. The `EIA Ingest` datasource (pointing at the `ingest` database) is pre-connected — go to **SQL Lab → SQL Editor** or **Data → Datasets** to start building charts.
+
+**Internet-facing setup**: If exposing Superset publicly, consider putting it behind a TLS-terminating reverse proxy (Caddy, nginx). Set `SUPERSET_PROXY_FIX=true` and `SUPERSET_COOKIE_SECURE=true` in `.env`, then re-run init:
+```bash
+docker compose -f deploy/proxmox/compose/superset.yaml run --rm superset-init
+docker compose -f deploy/proxmox/compose/superset.yaml restart superset
+```
+
+---
+
+## Step 10 — Run the Initial Data Backfill
 
 Once everything is running, trigger a backfill from **your workstation** (or from inside the app container):
 
@@ -188,6 +223,7 @@ Monitor progress in the Prefect UI at `http://192.168.1.11:4200`.
 | Prefect UI | http://192.168.1.11:4200 |
 | pgweb (Postgres browser) | http://192.168.1.11:8080 |
 | Jupyter Lab | http://192.168.1.12:8888 |
+| Superset | http://192.168.1.13:8088 |
 | Postgres | 192.168.1.10:5432 |
 
 ---
@@ -203,7 +239,20 @@ git pull   # or rsync from workstation
 docker compose -f deploy/proxmox/compose/app.yaml up -d --build
 ```
 
-Same process on the jupyter container for notebook/dependency changes.
+Same process on the jupyter and superset containers:
+
+```bash
+# Jupyter
+ssh root@192.168.1.12
+cd /opt/energy-usa && git pull
+docker compose -f deploy/proxmox/compose/jupyter.yaml up -d --build
+
+# Superset (image is upstream — no --build needed)
+ssh root@192.168.1.13
+cd /opt/energy-usa && git pull
+docker compose -f deploy/proxmox/compose/superset.yaml pull
+docker compose -f deploy/proxmox/compose/superset.yaml up -d superset
+```
 
 ---
 

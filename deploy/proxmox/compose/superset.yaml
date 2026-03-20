@@ -1,0 +1,53 @@
+# Docker Compose for the superset LXC (energy-superset).
+# Runs Apache Superset connected to the Postgres LXC.
+#
+# First-time setup:
+#   docker compose -f deploy/proxmox/compose/superset.yaml run --rm superset-init
+#
+# Then start the persistent service:
+#   docker compose -f deploy/proxmox/compose/superset.yaml up -d superset
+#
+# Subsequent restarts (no re-init needed):
+#   docker compose -f deploy/proxmox/compose/superset.yaml up -d
+
+services:
+
+  # One-shot init: run manually on first deploy, then the main service takes over.
+  superset-init:
+    image: apache/superset:4.1.2
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/superset
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER:-energy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER:-admin}
+      SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL:-admin@energy.local}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD}
+      # Set to "true" if Superset is behind a reverse proxy (nginx, Caddy)
+      SUPERSET_PROXY_FIX: ${SUPERSET_PROXY_FIX:-false}
+      SUPERSET_COOKIE_SECURE: ${SUPERSET_COOKIE_SECURE:-false}
+    volumes:
+      - ./docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+      - ./docker/superset/seed_databases.py:/app/pythonpath/seed_databases.py:ro
+      - ./docker/superset/init.sh:/app/init.sh:ro
+    command: ["bash", "/app/init.sh"]
+
+  superset:
+    image: apache/superset:4.1.2
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/superset
+      SUPERSET_PROXY_FIX: ${SUPERSET_PROXY_FIX:-false}
+      SUPERSET_COOKIE_SECURE: ${SUPERSET_COOKIE_SECURE:-false}
+    volumes:
+      - ./docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+    command: >
+      gunicorn
+      --bind 0.0.0.0:8088
+      --workers 4
+      --timeout 120
+      "superset.app:create_app()"
+    ports:
+      - "8088:8088"
+    restart: unless-stopped

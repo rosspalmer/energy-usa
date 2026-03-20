@@ -91,5 +91,49 @@ services:
       postgres:
         condition: service_healthy
 
+  # One-shot container: upgrades Superset's metadata DB, creates admin user,
+  # seeds the EIA Ingest and Energy USA App datasource connections.
+  # Runs to completion before the main superset service starts.
+  superset-init:
+    image: apache/superset:4.1.2
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-local-dev-secret-change-me-in-production}
+      SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/superset
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-energy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-energy}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER:-admin}
+      SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL:-admin@energy.local}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+      - ./docker/superset/seed_databases.py:/app/pythonpath/seed_databases.py:ro
+      - ./docker/superset/init.sh:/app/init.sh:ro
+    command: ["bash", "/app/init.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  superset:
+    image: apache/superset:4.1.2
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-local-dev-secret-change-me-in-production}
+      SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/superset
+    volumes:
+      - ./docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+    command: >
+      gunicorn
+      --bind 0.0.0.0:8088
+      --workers 4
+      --timeout 120
+      "superset.app:create_app()"
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      superset-init:
+        condition: service_completed_successfully
+
 volumes:
   postgres_data: {}
