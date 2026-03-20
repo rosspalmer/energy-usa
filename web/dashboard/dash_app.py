@@ -69,9 +69,9 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Label("State (primary):"),
-                dcc.Dropdown(id="state-primary", placeholder="Select state", clearable=False),
+                dcc.Dropdown(id="state-primary", placeholder="Select state", clearable=False, style={"minWidth": "180px", "flex": "1"}),
                 html.Label("Compare (optional):"),
-                dcc.Dropdown(id="state-compare", placeholder="Select state to compare", clearable=True),
+                dcc.Dropdown(id="state-compare", placeholder="Select state to compare", clearable=True, style={"minWidth": "180px", "flex": "1"}),
                 html.Div(id="state-empty-msg", style={"width": "100%", "marginTop": "0.5rem"}),
             ],
             className="dashboard-controls",
