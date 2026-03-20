@@ -20,9 +20,12 @@ from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
 
-# State-electricity-profiles/summary/data returns 400 if data[] is sent; request
-# all columns by omitting data[] and map the keys we need in the DB layer.
-# Expected keys in response: period, stateid, average-retail-price, total-generation, total-consumption (or equivalents).
+# EIA column IDs for state-electricity-profiles/summary/data.
+# Use data[]=list format (same as other flows). Indexed format (data[0]=) returns 400.
+# API keys:  average-retail-price (¢/kWh), net-generation (MWh), total-retail-sales (MWh)
+# DB columns: average_retail_price,         total_generation,     total_consumption
+EIA_STATE_SUMMARY_DATA_COLUMNS = ["average-retail-price", "net-generation", "total-retail-sales"]
+
 # Source frequency: annual. We request frequency=annual and convert date range to years; period is stored as DATE (Jan 1).
 
 
@@ -62,6 +65,7 @@ async def fetch_eia_state_summary(
                 "frequency": "annual",
                 "start": start,
                 "end": end,
+                "data[]": EIA_STATE_SUMMARY_DATA_COLUMNS,
             }
             resp = await manager.get_electricity(
                 subpath="state-electricity-profiles/summary/data",

@@ -75,8 +75,10 @@ def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             "period": period_date,
             "stateid": stateid,
             "average_retail_price": _get(r, "average-retail-price", "average_retail_price") or _get_ci(r, "average-retail-price", "average_retail_price"),
-            "total_generation": _get(r, "total-generation", "total_generation") or _get_ci(r, "total-generation", "total_generation"),
-            "total_consumption": _get(r, "total-consumption", "total_consumption") or _get_ci(r, "total-consumption", "total_consumption"),
+            # EIA key is "net-generation" (All Sectors, MWh); maps to total_generation column
+            "total_generation": _get(r, "net-generation", "total-generation", "total_generation") or _get_ci(r, "net-generation", "total-generation", "total_generation"),
+            # EIA key is "total-retail-sales" (MWh); maps to total_consumption column
+            "total_consumption": _get(r, "total-retail-sales", "total-consumption", "total_consumption") or _get_ci(r, "total-retail-sales", "total-consumption", "total_consumption"),
         })
     if not normalized and rows:
         sample = rows[0]
