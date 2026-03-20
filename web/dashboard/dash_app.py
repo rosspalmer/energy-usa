@@ -9,6 +9,10 @@ from dash import dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
 
+# Gas-station brand palette — teal primary, red accent
+BRAND_COLORS = ["#008b8b", "#c41e3a", "#20b2aa", "#e85a6b", "#005f5f", "#8b1224"]
+CHART_TEMPLATE = "plotly_white"
+
 
 def _get_ingest_status():
     """Return {"ok": True} or {"ok": False, "error": "..."} for ingest DB availability."""
@@ -251,6 +255,23 @@ def _set_primary_default(options):
     return None
 
 
+def _apply_brand_style(fig):
+    """Apply gas-station colors and consistent layout to a Plotly figure."""
+    fig.update_layout(
+        template=CHART_TEMPLATE,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#f8fafa",
+        font={"family": "system-ui, sans-serif", "color": "#1a1a1a"},
+        title_font={"family": "Georgia, serif", "color": "#008b8b"},
+        legend={"bgcolor": "rgba(0,0,0,0)"},
+    )
+    # Apply brand color sequence to each trace in order
+    for i, trace in enumerate(fig.data):
+        color = BRAND_COLORS[i % len(BRAND_COLORS)]
+        trace.update(line={"color": color, "width": 2})
+    return fig
+
+
 @app.callback(
     Output("ts-price", "figure"),
     Input("state-primary", "value"),
@@ -260,10 +281,14 @@ def _update_price(state_primary, state_compare):
     state_ids = [s for s in (state_primary, state_compare) if s]
     df = _get_retail_price(state_ids)
     if df.empty:
-        return px.line(title="Retail price (residential) — no data").update_layout(template="plotly_white")
-    fig = px.line(df, x="period", y="avg_price", color="stateid", title="Retail price (residential, $/kWh)")
-    fig.update_layout(template="plotly_white", xaxis_title="Period", yaxis_title="Avg price")
-    return fig
+        return px.line(title="Retail price (residential) — no data").update_layout(template=CHART_TEMPLATE)
+    fig = px.line(
+        df, x="period", y="avg_price", color="stateid",
+        title="Retail price (residential, ¢/kWh)",
+        color_discrete_sequence=BRAND_COLORS,
+    )
+    fig.update_layout(xaxis_title="Period", yaxis_title="Avg price (¢/kWh)")
+    return _apply_brand_style(fig)
 
 
 @app.callback(
@@ -275,7 +300,11 @@ def _update_generation(state_primary, state_compare):
     state_ids = [s for s in (state_primary, state_compare) if s]
     df = _get_generation(state_ids)
     if df.empty:
-        return px.line(title="Total generation — no data").update_layout(template="plotly_white")
-    fig = px.line(df, x="period", y="total_generation", color="stateid", title="Total generation")
-    fig.update_layout(template="plotly_white", xaxis_title="Period", yaxis_title="Generation")
-    return fig
+        return px.line(title="Total generation — no data").update_layout(template=CHART_TEMPLATE)
+    fig = px.line(
+        df, x="period", y="total_generation", color="stateid",
+        title="Total electricity generation (MWh)",
+        color_discrete_sequence=BRAND_COLORS,
+    )
+    fig.update_layout(xaxis_title="Period", yaxis_title="Generation (MWh)")
+    return _apply_brand_style(fig)

@@ -1,0 +1,61 @@
+# Docker Compose for the app LXC (energy-app).
+# Runs: Prefect server, Prefect worker, Django web app, pgweb.
+# Postgres runs natively on a separate LXC — set POSTGRES_HOST in .env.
+#
+# Run from repo root:
+#   docker compose -f deploy/proxmox/compose/app.yaml up -d --build
+
+services:
+
+  prefect-server:
+    image: prefecthq/prefect:2-python3.12
+    command: prefect server start --host 0.0.0.0
+    environment:
+      # Store Prefect metadata in the dedicated postgres LXC database.
+      # Falls back to SQLite if not set, but Postgres is recommended for production.
+      PREFECT_API_DATABASE_CONNECTION_URL: >-
+        postgresql+asyncpg://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/prefect
+    ports:
+      - "4200:4200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  prefect-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      EIA_API_KEY: ${EIA_API_KEY}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/ingest
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB:-energy_usa}
+      INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/ingest
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB:-energy_usa}?sslmode=disable
+    ports:
+      - "8080:8081"
+    restart: unless-stopped

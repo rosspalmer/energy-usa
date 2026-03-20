@@ -27,6 +27,27 @@ web = [
 notebook = [
     "jupyterlab>=4.0",
     "ipykernel>=6.0",
+    "jupyter-ai>=2.0",
+    "langchain-anthropic>=0.3",
+]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-django>=4.8",
+    "django>=5.0",
+    "django-plotly-dash>=2.0",
+    "dash>=2.0",
+    "plotly>=5.0",
+    "pandas>=2.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+DJANGO_SETTINGS_MODULE = "config.settings"
+pythonpath = ["src", "web"]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that require a running Postgres database",
 ]
 
 [build-system]

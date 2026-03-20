@@ -49,3 +49,19 @@ class Settings(BaseSettings):
     database_url: str = ""
     """PostgreSQL connection URL for the application database (ingest and future read endpoints).
     Example: postgresql://user:password@host:5432/energy_usa. Empty means DB features are disabled."""
+
+    ingest_database_url: str = ""
+    """PostgreSQL connection URL specifically for the EIA ingest database.
+    When set, ingest flows write here instead of database_url. Allows running the Django
+    web app (database_url → energy_usa) and local backfill flows (ingest_database_url → ingest)
+    with the same .env. If empty, falls back to database_url."""
+
+    @property
+    def effective_ingest_url(self) -> str:
+        """Return the database URL that ingest flows should write to.
+
+        Prefers ingest_database_url (INGEST_DATABASE_URL env var) when set;
+        falls back to database_url (DATABASE_URL env var) for backward compatibility
+        with Docker workers where DATABASE_URL already points to the ingest database.
+        """
+        return self.ingest_database_url or self.database_url

@@ -155,8 +155,8 @@ async def ingest_eia_state_summary(
     settings = Settings()
     if not settings.eia_api_key:
         raise ValueError("EIA_API_KEY is required for ingest_eia_state_summary")
-    if not settings.database_url:
-        raise ValueError("DATABASE_URL is required for ingest_eia_state_summary")
+    if not settings.effective_ingest_url:
+        raise ValueError("INGEST_DATABASE_URL (or DATABASE_URL) is required for ingest_eia_state_summary")
 
     start, end = resolve_date_range(date_start, date_end)
     # Source cadence is annual: use year range for EIA API
@@ -177,6 +177,6 @@ async def ingest_eia_state_summary(
         start=start_year,
         end=end_year,
     )
-    total = upsert_state_summary_task(settings.database_url, data)
+    total = upsert_state_summary_task(settings.effective_ingest_url, data)
     logger.info("Ingest complete: total rows upserted=%s", total)
     return total

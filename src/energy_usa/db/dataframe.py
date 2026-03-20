@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from energy_usa.db.retail_sales import get_connection
+import psycopg
 
 
 def query_to_dataframe(
@@ -23,5 +23,7 @@ def query_to_dataframe(
     """
     import pandas as pd
 
-    with get_connection(database_url) as conn:
+    # Use default row factory (tuples) so pandas gets rows as sequences and column names from cursor.description.
+    # get_connection() uses dict_row, which causes pandas to see column names instead of values.
+    with psycopg.connect(database_url) as conn:
         return pd.read_sql_query(sql, conn, params=params)

@@ -2,6 +2,10 @@
 
 Live and historical US energy data in Postgres (ingested via Prefect from EIA). Web app: Django with Dash (plotly) dashboard.
 
+**[→ Documentation](docs/README.md)** — setup guides, data analysis walkthroughs, and beginner-friendly explanations of how everything fits together.
+
+**[→ Proxmox Deployment](deploy/proxmox/README.md)** — step-by-step guide for deploying to a Proxmox on-prem server using LXC containers.
+
 ## Setup
 
 1. Install [uv](https://docs.astral.sh/uv/)
