@@ -17,10 +17,52 @@ import asyncio
 import sys
 
 DATASETS = [
+    # Original four
     "retail_sales",
     "electric_power_operational",
     "state_source_disposition",
     "state_summary",
+    # Electricity extras
+    "rto_region_data",
+    "rto_fuel_type_data",
+    "rto_region_sub_ba_data",
+    "rto_interchange_data",
+    "rto_daily_region_data",
+    "facility_fuel",
+    "operating_generator_capacity",
+    "sep_emissions",
+    "sep_capability",
+    "sep_net_metering",
+    # Coal
+    "coal_aggregate_production",
+    "coal_consumption_quality",
+    "coal_mine_production",
+    # Crude oil
+    "crude_oil_imports",
+    # Nuclear
+    "nuclear_outages_us",
+    "nuclear_outages_facility",
+    # Environment
+    "co2_emissions",
+    # Natural gas
+    "natural_gas_prices",
+    "natural_gas_consumption",
+    "natural_gas_production",
+    "natural_gas_storage",
+    # Petroleum
+    "petroleum_prices",
+    "petroleum_supply",
+    # Aggregate / cross-sector
+    "total_energy",
+    "seds",
+    "steo",
+    "international",
+    # Biomass
+    "biomass_capacity",
+    "biomass_production",
+    # Projections
+    "aeo",
+    "ieo",
     "all",
 ]
 
@@ -32,6 +74,7 @@ def parse_args() -> argparse.Namespace:
         epilog="""
 Examples:
   uv run python scripts/run_local.py --dataset retail_sales --start 2020-01 --end 2020-06
+  uv run python scripts/run_local.py --dataset natural_gas_prices --start 2024-01 --end 2024-06
   uv run python scripts/run_local.py --dataset all --start 2015-01 --end 2024-12 --chunks 3
         """,
     )
@@ -39,7 +82,7 @@ Examples:
         "--dataset",
         choices=DATASETS,
         required=True,
-        help="Which EIA dataset to ingest ('all' runs all four).",
+        help="Which EIA dataset to ingest ('all' runs all datasets).",
     )
     parser.add_argument(
         "--start",

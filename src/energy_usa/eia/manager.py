@@ -139,3 +139,15 @@ class EIAManager:
         :returns: EIA API JSON response.
         """
         return await self._with_retry(lambda: self._eia_client.get_total_energy(subpath=subpath, **params))
+
+    async def get_route(self, path: str, **params: Any) -> dict[str, Any]:
+        """Fetch any EIA v2 path with retry and concurrency limits.
+
+        Use this for routes not covered by the typed helpers (e.g. ``seds/data``,
+        ``coal/aggregate-production/data``, ``aeo/2023/data``).
+
+        :param path: Full relative path under the base URL.
+        :param params: Query parameters.
+        :returns: EIA API JSON response.
+        """
+        return await self._with_retry(lambda: self._eia_client.get_route(path, **params))

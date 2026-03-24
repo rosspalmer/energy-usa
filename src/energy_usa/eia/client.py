@@ -181,3 +181,19 @@ class EIAClient:
         if subpath:
             path = f"{path}/{subpath.strip('/')}"
         return await self._request(path, params if params else None)
+
+    async def get_route(
+        self,
+        path: str,
+        **params: Any,
+    ) -> dict[str, Any]:
+        """Generic GET for any EIA v2 path.
+
+        Use this for routes not covered by the typed helpers above (e.g.
+        ``coal/aggregate-production/data``, ``seds/data``, ``aeo/2023/data``).
+
+        :param path: Full relative path under the base URL (e.g. ``seds/data``).
+        :param params: Query parameters forwarded to the API.
+        :returns: JSON response from the EIA API.
+        """
+        return await self._request(path.lstrip("/"), params if params else None)
