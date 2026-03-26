@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_RTO_DAILY_REGION_COLUMNS = ["value", "value-units"]
+EIA_RTO_DAILY_REGION_COLUMNS = ["value"]
 
 
 @task(name="fetch-eia-rto-daily-region-data")

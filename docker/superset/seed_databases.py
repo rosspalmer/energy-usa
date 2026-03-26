@@ -9,7 +9,6 @@ import sys
 
 from superset import create_app
 from superset.extensions import db
-from superset.models.core import Database
 
 POSTGRES_HOST = os.environ["POSTGRES_HOST"]
 POSTGRES_USER = os.environ["POSTGRES_USER"]
@@ -32,6 +31,7 @@ CONNECTIONS = [
 
 app = create_app()
 with app.app_context():
+    from superset.models.core import Database
     for conn in CONNECTIONS:
         existing = db.session.query(Database).filter_by(database_name=conn["name"]).first()
         if not existing:

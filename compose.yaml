@@ -23,6 +23,9 @@ services:
   prefect-server:
     image: prefecthq/prefect:2-python3.12
     command: prefect server start --host 0.0.0.0
+    environment:
+      # Use Postgres instead of SQLite so run history survives container restarts.
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/prefect
     ports:
       - "4200:4200"
     healthcheck:
@@ -43,11 +46,17 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
       EIA_API_KEY: ${EIA_API_KEY}
       DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
+      # Store flow results on a persistent volume instead of the ephemeral container layer.
+      PREFECT_LOCAL_STORAGE_PATH: /prefect-results
+    volumes:
+      - prefect_results:/prefect-results
     depends_on:
       prefect-server:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    deploy:
+      replicas: 4
 
   web:
     build:
@@ -95,7 +104,9 @@ services:
   # seeds the EIA Ingest and Energy USA App datasource connections.
   # Runs to completion before the main superset service starts.
   superset-init:
-    image: apache/superset:4.1.2
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
     environment:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-local-dev-secret-change-me-in-production}
       SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/superset
@@ -115,7 +126,9 @@ services:
         condition: service_healthy
 
   superset:
-    image: apache/superset:4.1.2
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
     environment:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-local-dev-secret-change-me-in-production}
       SUPERSET_DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/superset
@@ -137,3 +150,4 @@ services:
 
 volumes:
   postgres_data: {}
+  prefect_results: {}

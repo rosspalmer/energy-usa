@@ -1,0 +1,7 @@
+FROM apache/superset:4.1.2
+
+# The official Superset image ships without a Postgres driver.
+# Install psycopg2-binary so SUPERSET_DATABASE_URL can use postgresql+psycopg2://.
+USER root
+RUN pip install --no-cache-dir psycopg2-binary
+USER superset

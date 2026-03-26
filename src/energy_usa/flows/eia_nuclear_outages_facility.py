@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_NUCLEAR_OUTAGES_FAC_COLUMNS = ["capacity-mw", "outage-mw"]
+EIA_NUCLEAR_OUTAGES_FAC_COLUMNS = ["capacity", "outage"]
 EIA_NUCLEAR_OUTAGES_FAC_PATH = "nuclear-outages/facility-nuclear-outages/data"
 
 

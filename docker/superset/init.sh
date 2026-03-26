@@ -7,16 +7,11 @@
 set -euo pipefail
 
 echo "==> Waiting for Postgres to be ready..."
-until python - <<'EOF'
-import os, sys, psycopg2
+until python3 - <<'EOF'
+import os, sys, socket
 try:
-    c = psycopg2.connect(
-        host=os.environ["POSTGRES_HOST"],
-        user=os.environ["POSTGRES_USER"],
-        password=os.environ["POSTGRES_PASSWORD"],
-        dbname="superset",
-    )
-    c.close()
+    s = socket.create_connection((os.environ["POSTGRES_HOST"], 5432), timeout=3)
+    s.close()
     sys.exit(0)
 except Exception:
     sys.exit(1)
