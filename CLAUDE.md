@@ -32,11 +32,7 @@ make up                              # Start full Docker Compose stack
 make down                            # Stop stack
 make logs SERVICE=web                # Tail logs for a specific service
 
-# Ingest — runs WITHOUT Prefect server (direct Python, full tracebacks)
-make backfill DATASET=retail_sales START=2020-01 END=2024-12
-make backfill DATASET=all START=2020-01 END=2024-12
-
-# Ingest — runs THROUGH Prefect (production path, requires stack up)
+# Ingest — always run THROUGH Docker Prefect (requires stack up)
 make deploy                          # Register deployments
 make run FLOW=backfill-eia START=2020-01 END=2024-12
 
@@ -49,7 +45,9 @@ make export TABLE=eia_retail_sales OUT=exports/retail_sales.csv
 make export TABLE=eia_retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
 ```
 
-> **Note:** The Makefile wraps `dock.sh` for Docker targets and `scripts/run_local.py` for local ingest. `dock.sh` remains available for lower-level Docker Compose control.
+> **Note:** The Makefile wraps `dock.sh` for Docker targets. `dock.sh` remains available for lower-level Docker Compose control.
+
+> **Important:** Always run ingest through Docker Prefect (`make run` or the Prefect API), never via `scripts/run_local.py`. The local runner uses Prefect's SQLite backend which hits concurrency/locking issues with backfills. The Docker stack uses Postgres for Prefect state, which handles concurrent child flows reliably.
 
 ## Local Development Without Docker
 
@@ -59,13 +57,6 @@ uv sync --extra web
 PYTHONPATH=web uv run python web/manage.py runserver
 ```
 Requires `DATABASE_URL` and `INGEST_DATABASE_URL` in `.env` pointing to a running Postgres (Docker or local).
-
-### Local ingest (no Prefect server)
-Prefect flows are plain Python functions — call them directly for fast debugging:
-```bash
-uv run python scripts/run_local.py --dataset retail_sales --start 2020-01 --end 2020-06
-```
-This gives full Python tracebacks instead of digging through Prefect worker logs. Use this workflow when building or debugging new ingest jobs. Use Prefect deployments only to validate the production path.
 
 ## Environment
 
@@ -80,8 +71,8 @@ Copy `.env.example` to `.env`. Required:
 
 ```
 EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
-                                ↓ (local debug)        ↓
-                          run_local.py         Django/Dash Dashboard
+                                                        ↓
+                                                Django/Dash Dashboard
 ```
 
 ### Key Components

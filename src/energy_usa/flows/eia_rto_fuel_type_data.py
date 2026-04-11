@@ -104,5 +104,7 @@ async def ingest_eia_rto_fuel_type_data(
         start=start, end=end,
     )
     total = upsert_rto_fuel_type_data_task(settings.effective_ingest_url, data)
+    if total == 0:
+        raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
     logger.info("Complete: rows_upserted=%s", total)
     return total

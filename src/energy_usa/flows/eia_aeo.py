@@ -114,5 +114,7 @@ async def ingest_eia_aeo(
         start=start, end=end, aeo_year=aeo_year,
     )
     total = upsert_aeo_task(settings.effective_ingest_url, data, aeo_year=aeo_year)
+    if total == 0:
+        raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
     logger.info("Complete: rows_upserted=%s", total)
     return total
