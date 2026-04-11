@@ -28,7 +28,7 @@ INSERT INTO eia.dataset_cadence (
 ) VALUES
     (
         'retail_sales',
-        'eia_retail_sales',
+        'retail_sales',
         'monthly',
         'monthly',
         'monthly',
@@ -38,7 +38,7 @@ INSERT INTO eia.dataset_cadence (
     ),
     (
         'electric_power_operational',
-        'eia_electric_power_operational',
+        'electric_power_operational',
         'monthly',
         'monthly',
         'monthly',
@@ -48,7 +48,7 @@ INSERT INTO eia.dataset_cadence (
     ),
     (
         'state_source_disposition',
-        'eia_state_source_disposition',
+        'state_source_disposition',
         'monthly',
         'monthly',
         'monthly',
@@ -58,7 +58,7 @@ INSERT INTO eia.dataset_cadence (
     ),
     (
         'state_summary',
-        'eia_state_summary',
+        'state_summary',
         'annual',
         'yearly',
         'monthly',
