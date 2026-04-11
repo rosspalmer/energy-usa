@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run this script on the Proxmox HOST (not inside a container).
-# Creates three LXC containers: postgres, app (prefect + django), and jupyter.
+# Creates four LXC containers: postgres, app (prefect + pgweb), jupyter, and superset.
 #
 # Usage:
 #   bash deploy/proxmox/create-lxc.sh
@@ -124,7 +124,6 @@ echo ""
 SUPERSET_IP_BARE="${SUPERSET_IP%/*}"
 
 echo "  3. After provisioning, services will be available at:"
-echo "       Web dashboard:  http://$APP_IP_BARE:8000"
 echo "       Prefect UI:     http://$APP_IP_BARE:4200"
 echo "       Jupyter Lab:    http://$JUPYTER_IP_BARE:8888"
 echo "       pgweb:          http://$APP_IP_BARE:8080"

@@ -11,7 +11,7 @@ Usage:
     # Custom SQL
     uv run python scripts/export_table.py --sql "SELECT period, stateid, sales FROM eia_retail_sales LIMIT 100" --out exports/sample.csv
 
-Reads INGEST_DATABASE_URL from .env (falls back to DATABASE_URL).
+Reads INGEST_DATABASE_URL from .env.
 """
 
 import argparse
@@ -49,9 +49,9 @@ def main() -> None:
     import pandas as pd
     from energy_usa.db.dataframe import query_to_dataframe
 
-    db_url = os.environ.get("INGEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    db_url = os.environ.get("INGEST_DATABASE_URL")
     if not db_url:
-        print("ERROR: INGEST_DATABASE_URL (or DATABASE_URL) not set in .env or environment.")
+        print("ERROR: INGEST_DATABASE_URL not set in .env or environment.")
         sys.exit(1)
 
     if args.sql:

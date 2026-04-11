@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Context
 
 Energy USA serves two audiences simultaneously:
-- **Data engineer** (primary): Production-grade infrastructure using real tools (Prefect, Postgres, Docker, Django)
+- **Data engineer** (primary): Production-grade infrastructure using real tools (Prefect, Postgres, Docker, Superset)
 - **Industry professional learning tech** (secondary): Must be able to follow along, debug, and eventually build simple pipelines with AI assistance
 
 All architectural decisions should keep both audiences in mind. Prefer explicit over clever. Documentation is a first-class deliverable — keep `docs/` up to date with every significant change.
@@ -16,7 +16,6 @@ This project uses `uv`. Always use `uv run` to execute Python scripts.
 
 ```bash
 uv sync                    # Install base dependencies
-uv sync --extra web        # Include Django/Dash dependencies
 uv sync --extra notebook   # Include Jupyter + jupyter-ai dependencies
 ```
 
@@ -30,14 +29,13 @@ make help                            # List all available targets
 # Stack management
 make up                              # Start full Docker Compose stack
 make down                            # Stop stack
-make logs SERVICE=web                # Tail logs for a specific service
+make logs SERVICE=prefect-worker     # Tail logs for a specific service
 
 # Ingest — always run THROUGH Docker Prefect (requires stack up)
 make deploy                          # Register deployments
 make run FLOW=backfill-eia START=2020-01 END=2024-12
 
 # Local development
-make web                             # Django dev server (no Docker)
 make jupyter                         # Jupyter Lab (no Docker)
 
 # Data export for analysis
@@ -51,18 +49,17 @@ make export TABLE=eia_retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.c
 
 ## Local Development Without Docker
 
-### Django web app
+### Jupyter Lab
 ```bash
-uv sync --extra web
-PYTHONPATH=web uv run python web/manage.py runserver
+uv sync --extra notebook
+make jupyter
 ```
-Requires `DATABASE_URL` and `INGEST_DATABASE_URL` in `.env` pointing to a running Postgres (Docker or local).
+Requires `INGEST_DATABASE_URL` in `.env` pointing to a running Postgres (Docker or local).
 
 ## Environment
 
 Copy `.env.example` to `.env`. Required:
 - `EIA_API_KEY` — register at [EIA Open Data](https://www.eia.gov/opendata/register.php)
-- `DATABASE_URL` — Django app database
 - `INGEST_DATABASE_URL` — EIA raw data database
 
 ## Architecture
@@ -72,7 +69,7 @@ Copy `.env.example` to `.env`. Required:
 ```
 EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
                                                         ↓
-                                                Django/Dash Dashboard
+                                                Superset Dashboard
 ```
 
 ### Key Components
@@ -86,10 +83,6 @@ EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
 - `flows/backfill_eia.py` — Chunks date ranges and submits child flow runs
 - `config.py` — pydantic-settings loaded from `.env`
 
-**`web/`** — Django + Dash app
-- `dashboard/dash_app.py` — Plotly Dash callbacks and chart definitions
-- Reads `INGEST_DATABASE_URL` for EIA raw data; `DATABASE_URL` for Django models
-
 **`docker/postgres/init/`** — SQL run on first container start; source of truth for schemas
 - `init/ingest/` — Table DDL for all four EIA datasets
 
@@ -97,7 +90,6 @@ EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
 
 | Database | Connection var | Purpose |
 |----------|---------------|---------|
-| `energy_usa` | `DATABASE_URL` | Django app (sessions, auth) |
 | `ingest` | `INGEST_DATABASE_URL` | EIA raw data tables |
 
 ### Ingest Patterns
@@ -162,13 +154,19 @@ make export TABLE=eia_retail_sales FILTER="stateid='TX' AND period > '2015-01-01
 
 Then at [claude.ai](https://claude.ai): attach the CSV and ask questions in plain English. No code required. Useful for: exploring unfamiliar datasets, drafting visualizations, writing SQL for the first time.
 
-## Visualization (Dash)
+## Code Style
 
-The dashboard uses Plotly Dash embedded in Django via `django-plotly-dash`. Theme is a retro 1950s gas station aesthetic — bright reds, teal blues, CSS custom properties. Maintain this style when adding components.
+### Python Docstrings
 
-- Prefer `dash-mantine-components` or `dash-bootstrap-components` as a styling base (easier to restyle than vanilla HTML)
-- All chart callbacks live in `web/dashboard/dash_app.py`
-- Fast filtering and splitting (by state, sector, fuel type) is a core requirement — avoid full page reloads
+Use reStructuredText docstrings for all functions and classes. Write detailed
+docstrings whenever practical, aimed at a novice developer audience — explain
+both what the code does and why.
+
+### Planning Trade-offs
+
+When considering trade-offs during the planning phase, ask a clarifying question
+rather than making an assumption. Present the options with their implications
+and ask which direction to take.
 
 ## Documentation Standards
 
@@ -186,7 +184,7 @@ Production runs on a Proxmox server as three LXC containers. See `deploy/proxmox
 | Container | Role |
 |-----------|------|
 | `energy-postgres` | Native PostgreSQL 16 — isolated for resource control and backups |
-| `energy-app` | Docker Compose: Prefect server + worker, Django web, pgweb |
+| `energy-app` | Docker Compose: Prefect server + worker, pgweb |
 | `energy-jupyter` | Docker Compose: Jupyter Lab |
 
 Key files:
@@ -207,6 +205,6 @@ The production compose files differ from `compose.yaml` in one key way: `postgre
 | postgres | 5432 | PostgreSQL 16 |
 | prefect-server | 4200 | Prefect UI and API |
 | prefect-worker | — | Runs scheduled ingest flows |
-| web | 8000 | Django + Dash dashboard |
 | jupyter | 8888 | Jupyter Lab + jupyter-ai |
 | pgweb | 8080 | Postgres web UI (quick table browsing) |
+| superset | 8088 | Apache Superset BI dashboard |

@@ -9,7 +9,7 @@ Usage:
     uv run python scripts/run_local.py --dataset all --start 2015-01 --end 2024-12
 
 The same flows run as in production, just without Prefect tracking state remotely.
-Requires EIA_API_KEY and DATABASE_URL (INGEST) in your .env or environment.
+Requires EIA_API_KEY and INGEST_DATABASE_URL in your .env or environment.
 """
 
 import argparse

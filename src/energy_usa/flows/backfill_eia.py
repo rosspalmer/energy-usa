@@ -11,7 +11,7 @@ from typing import Any, Awaitable, Callable, Literal
 from prefect import flow
 from prefect.logging import get_run_logger
 
-from energy_usa.flows.date_range import monthly_chunks, resolve_date_range
+from energy_usa.flows.date_range import make_run_name, monthly_chunks, resolve_date_range
 from energy_usa.flows.eia_aeo import ingest_eia_aeo
 from energy_usa.flows.eia_biomass_capacity import ingest_eia_biomass_capacity
 from energy_usa.flows.eia_biomass_production import ingest_eia_biomass_production
@@ -152,7 +152,20 @@ def _get_ingest_flows(dataset: DatasetName) -> list[tuple[str, IngestFlow]]:
     return [_FLOW_MAP[dataset]]
 
 
-@flow(name="backfill-eia", retries=1)
+def _backfill_run_name(**kwargs):
+    s = kwargs.get("date_start") or "latest"
+    e = kwargs.get("date_end") or "latest"
+    dataset = kwargs.get("dataset") or "retail_sales"
+    chunks = kwargs.get("chunk_months") or 1
+    return f"backfill {dataset} {s} to {e} chunks={chunks}"
+
+
+@flow(
+    name="backfill-eia",
+    flow_run_name=_backfill_run_name,
+    retries=1,
+    retry_delay_seconds=60,
+)
 async def backfill_eia(
     date_start: str | None = None,
     date_end: str | None = None,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run INSIDE the app LXC container (energy-app).
 # Installs Docker, clones the repo, and starts the app services
-# (Prefect server, Prefect worker, Django web, pgweb) via Docker Compose.
+# (Prefect server, Prefect worker, pgweb) via Docker Compose.
 #
 # Usage (from Proxmox host):
 #   pct exec 201 -- bash -c "apt-get install -y git curl && \
@@ -97,6 +97,5 @@ systemctl enable energy-app
 
 echo ""
 echo "==> App provisioning complete."
-echo "    Web dashboard: http://$(hostname -I | awk '{print $1}'):8000"
 echo "    Prefect UI:    http://$(hostname -I | awk '{print $1}'):4200"
 echo "    pgweb:         http://$(hostname -I | awk '{print $1}'):8080"

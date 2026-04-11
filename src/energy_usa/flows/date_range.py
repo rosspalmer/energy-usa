@@ -64,6 +64,19 @@ def resolve_date_range(
     return (start, end)
 
 
+def make_run_name(cadence: str, date_start: str | None, date_end: str | None) -> str:
+    """Build a Prefect flow-run name that sorts by date range.
+
+    :param cadence: Dataset cadence label (monthly, daily, annual, quarterly).
+    :param date_start: Start period or None.
+    :param date_end: End period or None.
+    :returns: Human-readable, sortable run name.
+    """
+    s = date_start or "latest"
+    e = date_end or "latest"
+    return f"{cadence} {s} to {e}"
+
+
 def monthly_chunks(
     date_start: str,
     date_end: str,

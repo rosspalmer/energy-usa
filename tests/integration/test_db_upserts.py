@@ -35,7 +35,7 @@ def test_retail_sales_upsert_inserts_row(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT price FROM eia_retail_sales WHERE stateid = 'TEST_CA' AND period = '2024-01-01'"
+            "SELECT price FROM ingest.eia_retail_sales WHERE stateid = 'TEST_CA' AND period = '2024-01-01'"
         )
         row = cur.fetchone()
     assert row is not None
@@ -61,7 +61,7 @@ def test_retail_sales_upsert_is_idempotent(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*), MAX(price) FROM eia_retail_sales "
+            "SELECT COUNT(*), MAX(price) FROM ingest.eia_retail_sales "
             "WHERE stateid = 'TEST_TX' AND period = '2024-02-01' AND sectorid = 'COM'"
         )
         result = cur.fetchone()
@@ -87,7 +87,7 @@ def test_electric_power_upsert_inserts_row(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT generation FROM eia_electric_power_operational "
+            "SELECT generation FROM ingest.eia_electric_power_operational "
             "WHERE stateid = 'TEST_NY' AND fueltypeid = 'SUN' AND period = '2024-01-01'"
         )
         row = cur.fetchone()
@@ -123,7 +123,7 @@ def test_electric_power_zero_generation_stored(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT generation FROM eia_electric_power_operational "
+            "SELECT generation FROM ingest.eia_electric_power_operational "
             "WHERE stateid = 'TEST_VT' AND fueltypeid = 'COL' AND period = '2024-03-01'"
         )
         row = cur.fetchone()
@@ -150,7 +150,7 @@ def test_state_summary_upsert_inserts_row(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT average_retail_price, total_generation FROM eia_state_summary "
+            "SELECT average_retail_price, total_generation FROM ingest.eia_state_summary "
             "WHERE stateid = 'TEST_WA' AND period = '2023-01-01'"
         )
         row = cur.fetchone()
@@ -175,7 +175,7 @@ def test_state_summary_upsert_is_idempotent(ingest_conn):
 
     with ingest_conn.cursor() as cur:
         cur.execute(
-            "SELECT COUNT(*), MAX(average_retail_price) FROM eia_state_summary "
+            "SELECT COUNT(*), MAX(average_retail_price) FROM ingest.eia_state_summary "
             "WHERE stateid = 'TEST_OR' AND period = '2022-01-01'"
         )
         result = cur.fetchone()

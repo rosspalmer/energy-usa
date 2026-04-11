@@ -1,4 +1,4 @@
-# Single-machine stack: Postgres, Prefect server, Prefect process worker, Django web app.
+# Single-machine stack: Postgres, Prefect server, Prefect process worker, Superset BI dashboard.
 # Requires .env with EIA_API_KEY and optionally POSTGRES_PASSWORD. Create process work pool once:
 #   docker compose run --rm prefect-worker prefect work-pool create process-pool --type process
 
@@ -8,12 +8,12 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-energy}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-energy}
-      POSTGRES_DB: ${POSTGRES_DB:-energy_usa}
+      POSTGRES_DB: ${POSTGRES_DB:-ingest}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-energy} -d ${POSTGRES_DB:-energy_usa}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-energy} -d ${POSTGRES_DB:-ingest}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -45,7 +45,7 @@ services:
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
       EIA_API_KEY: ${EIA_API_KEY}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
+      INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
       # Store flow results on a persistent volume instead of the ephemeral container layer.
       PREFECT_LOCAL_STORAGE_PATH: /prefect-results
     volumes:
@@ -58,29 +58,12 @@ services:
     deploy:
       replicas: 4
 
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.web
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}
-      INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me-in-production}
-      DJANGO_DEBUG: "false"
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   jupyter:
     build:
       context: .
       dockerfile: Dockerfile.jupyter
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}
       INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
     volumes:
       - ./notebooks:/app/notebooks
@@ -93,7 +76,7 @@ services:
   pgweb:
     image: sosedoff/pgweb:latest
     environment:
-      PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/${POSTGRES_DB:-energy_usa}?sslmode=disable
+      PGWEB_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest?sslmode=disable
     ports:
       - "8080:8081"
     depends_on:
@@ -101,7 +84,7 @@ services:
         condition: service_healthy
 
   # One-shot container: upgrades Superset's metadata DB, creates admin user,
-  # seeds the EIA Ingest and Energy USA App datasource connections.
+  # seeds the EIA Ingest datasource connection.
   # Runs to completion before the main superset service starts.
   superset-init:
     build:

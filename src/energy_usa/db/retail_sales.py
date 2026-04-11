@@ -37,7 +37,7 @@ def upsert_retail_sales(conn: psycopg.Connection, rows: list[dict[str, Any]]) ->
     if not rows:
         return 0
     sql = """
-    INSERT INTO eia_retail_sales (period, stateid, sectorid, revenue, sales, price, customers, ingested_at)
+    INSERT INTO ingest.eia_retail_sales (period, stateid, sectorid, revenue, sales, price, customers, ingested_at)
     VALUES (%(period)s, %(stateid)s, %(sectorid)s, %(revenue)s, %(sales)s, %(price)s, %(customers)s, now())
     ON CONFLICT (period, stateid, sectorid)
     DO UPDATE SET

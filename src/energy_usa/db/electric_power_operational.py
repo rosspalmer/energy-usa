@@ -51,7 +51,7 @@ def upsert_electric_power_operational(
     if not rows:
         return 0
     sql = """
-    INSERT INTO eia_electric_power_operational (
+    INSERT INTO ingest.eia_electric_power_operational (
         period, stateid, sectorid, fueltypeid, generation, ingested_at
     )
     VALUES (%(period)s, %(stateid)s, %(sectorid)s, %(fueltypeid)s, %(generation)s, now())

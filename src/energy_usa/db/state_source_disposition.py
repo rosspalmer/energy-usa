@@ -30,7 +30,7 @@ def upsert_state_source_disposition(
     if not rows:
         return 0
     sql = """
-    INSERT INTO eia_state_source_disposition (
+    INSERT INTO ingest.eia_state_source_disposition (
         period, stateid, net_interstate_trade, total_disposition, ingested_at
     )
     VALUES (%(period)s, %(stateid)s, %(net_interstate_trade)s, %(total_disposition)s, now())

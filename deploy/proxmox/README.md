@@ -9,7 +9,7 @@ Four LXC containers, each with a dedicated job:
 | Container | Default IP | What it runs |
 |-----------|-----------|--------------|
 | `energy-postgres` | 192.168.1.10 | PostgreSQL 16 (native, no Docker) |
-| `energy-app` | 192.168.1.11 | Prefect server + worker, Django web app, pgweb |
+| `energy-app` | 192.168.1.11 | Prefect server + worker, pgweb |
 | `energy-jupyter` | 192.168.1.12 | Jupyter Lab |
 | `energy-superset` | 192.168.1.13 | Apache Superset BI dashboard |
 
@@ -105,8 +105,7 @@ The app, jupyter, and superset containers each need a `.env` file at `/opt/energ
 ssh root@192.168.1.11
 cp /opt/energy-usa/deploy/proxmox/.env.production.example /opt/energy-usa/.env
 nano /opt/energy-usa/.env
-# Fill in: EIA_API_KEY, POSTGRES_HOST, POSTGRES_PASSWORD, DJANGO_SECRET_KEY,
-#          DJANGO_ALLOWED_HOSTS, ANTHROPIC_API_KEY
+# Fill in: EIA_API_KEY, POSTGRES_HOST, POSTGRES_PASSWORD, ANTHROPIC_API_KEY
 
 # On the jupyter container (192.168.1.12) — same process
 ssh root@192.168.1.12
@@ -129,8 +128,6 @@ Key values to set (see `.env.production.example` for all options):
 | `POSTGRES_HOST` | IP of the postgres container (e.g. `192.168.1.10`) |
 | `POSTGRES_PASSWORD` | Strong password — must match what you set in step 6 |
 | `EIA_API_KEY` | Your EIA API key |
-| `DJANGO_SECRET_KEY` | Run `python -c "import secrets; print(secrets.token_hex(50))"` |
-| `DJANGO_ALLOWED_HOSTS` | App container IP + any domain name |
 | `ANTHROPIC_API_KEY` | For jupyter-ai Claude integration |
 | `SUPERSET_SECRET_KEY` | Run `python -c "import secrets; print(secrets.token_hex(42))"` |
 | `SUPERSET_ADMIN_PASSWORD` | Strong password for the Superset admin UI login |
@@ -149,7 +146,7 @@ bash /opt/energy-usa/deploy/proxmox/provision/postgres.sh
 
 The script will:
 - Install PostgreSQL 16
-- Create databases: `energy_usa`, `ingest`, `prefect`
+- Create databases: `ingest`, `prefect`, `superset`
 - Create the `energy` user with the password you set
 - Open port 5432 to your LAN subnet
 - Apply the ingest table schemas
@@ -219,7 +216,6 @@ Monitor progress in the Prefect UI at `http://192.168.1.11:4200`.
 
 | Service | URL |
 |---------|-----|
-| Web dashboard | http://192.168.1.11:8000 |
 | Prefect UI | http://192.168.1.11:4200 |
 | pgweb (Postgres browser) | http://192.168.1.11:8080 |
 | Jupyter Lab | http://192.168.1.12:8888 |
@@ -262,7 +258,7 @@ From your workstation, DBeaver can connect directly to the postgres container:
 
 1. New Connection → **PostgreSQL**
 2. Host: `192.168.1.10`, Port: `5432`
-3. Database: `ingest` (or `energy_usa`)
+3. Database: `ingest`
 4. Username / Password: from your `.env`
 5. Test Connection → Finish
 

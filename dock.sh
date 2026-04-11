@@ -18,7 +18,7 @@ Commands:
                   Optional workers = number of prefect-worker replicas (default: 1, or PREFECT_WORKERS)
   down            Stop and remove containers
   restart         Restart all services
-  logs [service]   Tail logs (optional: postgres, prefect-server, prefect-worker, jupyter, pgweb, web)
+  logs [service]   Tail logs (optional: postgres, prefect-server, prefect-worker, jupyter, pgweb)
   ps              List running services
   worker-pool     Create Prefect process work pool (idempotent; run once)
   deploy          Register Prefect ingest deployments (run after worker-pool)
@@ -57,7 +57,7 @@ wait_for_prefect() {
 cmd_up() {
   local workers="${1:-${PREFECT_WORKERS:-1}}"
   $COMPOSE_CMD up -d --scale prefect-worker="$workers" --build
-  echo "Stack up (prefect-worker x${workers}). Web: http://localhost:8000  Prefect: http://localhost:4200  Jupyter: http://localhost:8888  pgweb: http://localhost:8080"
+  echo "Stack up (prefect-worker x${workers}). Prefect: http://localhost:4200  Jupyter: http://localhost:8888  pgweb: http://localhost:8080  Superset: http://localhost:8088"
   wait_for_prefect || true
   cmd_worker_pool
   cmd_deploy

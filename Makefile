@@ -15,7 +15,7 @@ OUT       ?= exports/$(TABLE).csv   # Output path for `make export`
 
 .PHONY: help up down logs deploy \
         backfill backfill-prefect \
-        web jupyter \
+        jupyter \
         export
 
 # ── Help ──────────────────────────────────────────────────────────────────────
@@ -63,10 +63,6 @@ backfill-prefect:  ## Trigger a backfill through the Prefect server. Use DATASET
 	  --param dataset=$(DATASET)
 
 # ── Local services (no Docker) ────────────────────────────────────────────────
-
-web:  ## Start Django dev server locally (needs DATABASE_URL in .env)
-	uv sync --extra web
-	PYTHONPATH=web uv run python web/manage.py runserver
 
 jupyter:  ## Start Jupyter Lab locally (needs DATABASE_URL in .env)
 	uv sync --extra notebook

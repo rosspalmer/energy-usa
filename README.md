@@ -1,6 +1,6 @@
 # Energy USA
 
-Live and historical US energy data in Postgres (ingested via Prefect from EIA). Web app: Django with Dash (plotly) dashboard.
+Live and historical US energy data in Postgres (ingested via Prefect from EIA). BI dashboard: Apache Superset.
 
 **[→ Documentation](docs/README.md)** — setup guides, data analysis walkthroughs, and beginner-friendly explanations of how everything fits together.
 
@@ -29,10 +29,9 @@ Live and historical US energy data in Postgres (ingested via Prefect from EIA). 
 flowchart LR
     EIA[EIA Open Data API] --> Prefect[Prefect Flows/Tasks]
     Prefect --> PG[(Postgres)]
-    PG --> Django[Django App]
-    Django --> Dash[Dash/Plotly Dashboard]
+    PG --> Superset[Superset Dashboard]
 
-    User[User Browser] --> Django
+    User[User Browser] --> Superset
     Worker[Prefect Process Worker] --> Prefect
     PrefectUI[Prefect UI] --> Prefect
     Pgweb[pgweb] --> PG
@@ -47,7 +46,7 @@ sequenceDiagram
     participant Worker as Prefect Worker
     participant EIA as EIA API
     participant DB as Postgres
-    participant Web as Django + Dash
+    participant Web as Superset
 
     Scheduler->>Worker: Start ingest flow run
     Worker->>EIA: Request paginated electricity data
@@ -94,13 +93,10 @@ Examples:
 ./dock.sh run backfill-eia --param date_start=2020-01 --param date_end=2024-12 --param chunk_months=3 --param dataset=retail_sales
 ```
 
-- **Django web app** (dashboard): http://localhost:8000  
+- **Superset** (dashboard): http://localhost:8088  
 - **Prefect UI** (job orchestration): http://localhost:4200  
 - **Jupyter** (notebooks): http://localhost:8888  
 - **pgweb** (Postgres browser): http://localhost:8080  
-
-To run the web app locally (with Postgres and data already present):  
-`uv sync --extra web` then `PYTHONPATH=web uv run python web/manage.py runserver`. Set `DATABASE_URL` in `.env` or the environment.
 
 Or without the script: `docker compose up -d`, then create the work pool and run `PREFECT_API_URL=http://localhost:4200/api uv run python scripts/deploy_ingest.py` to deploy jobs.
 

@@ -69,10 +69,6 @@ BEGIN
 END
 \$\$;
 
--- Django app database
-SELECT 'CREATE DATABASE energy_usa OWNER $DB_USER'
-  WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'energy_usa')\gexec
-
 -- EIA ingest database
 SELECT 'CREATE DATABASE ingest OWNER $DB_USER'
   WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ingest')\gexec
@@ -85,7 +81,6 @@ SELECT 'CREATE DATABASE prefect OWNER $DB_USER'
 SELECT 'CREATE DATABASE superset OWNER $DB_USER'
   WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'superset')\gexec
 
-GRANT ALL PRIVILEGES ON DATABASE energy_usa TO $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE ingest TO $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE prefect TO $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE superset TO $DB_USER;
@@ -111,7 +106,7 @@ fi
 
 echo ""
 echo "==> PostgreSQL provisioning complete."
-echo "    Databases: energy_usa, ingest, prefect, superset"
+echo "    Databases: ingest, prefect, superset"
 echo "    User:      $DB_USER"
 echo "    Listening: 0.0.0.0:5432"
 echo "    LAN access: $ALLOWED_CIDR"

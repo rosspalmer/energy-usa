@@ -3,7 +3,7 @@
 Source cadence: monthly. Period is stored as DATE (first day of month).
 Runs on a monthly schedule (or on-demand). Paginates the EIA retail-sales/data
 endpoint and upserts into eia_retail_sales. Default date range is last calendar
-month; pass date_start/date_end for backfill. Requires EIA_API_KEY and DATABASE_URL.
+month; pass date_start/date_end for backfill. Requires EIA_API_KEY and INGEST_DATABASE_URL.
 """
 
 import asyncio
@@ -15,7 +15,7 @@ from prefect.logging import get_run_logger
 from energy_usa.config import Settings
 from energy_usa.db import get_connection, upsert_retail_sales
 from energy_usa.eia.manager import EIAManager
-from energy_usa.flows.date_range import resolve_date_range
+from energy_usa.flows.date_range import make_run_name, resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
 
@@ -77,11 +77,13 @@ async def fetch_eia_retail_sales(
             total_available = response_body.get("total")
             if total_available is not None:
                 try:
-                    total_n = int(total_available)
+                    if offset >= int(total_available):
+                        break
                 except (TypeError, ValueError):
-                    total_n = None
-                if total_n is not None and offset >= total_n:
-                    break
+                    logger.warning(
+                        "Unexpected 'total' value from EIA API: %r — skipping pagination check",
+                        total_available,
+                    )
             if page_delay_seconds > 0:
                 await asyncio.sleep(page_delay_seconds)
         logger.info("Fetch complete: total rows=%s", len(all_data))
@@ -109,7 +111,17 @@ def upsert_retail_sales_task(
         conn.close()
 
 
-@flow(name="ingest-eia-retail-sales", retries=2)
+def _run_name(**kwargs):
+    return make_run_name("monthly", kwargs.get("date_start"), kwargs.get("date_end"))
+
+
+@flow(
+    name="ingest-eia-retail-sales",
+    flow_run_name=_run_name,
+    retries=2,
+    retry_delay_seconds=60,
+    timeout_seconds=1800,
+)
 async def ingest_eia_retail_sales(
     date_start: str | None = None,
     date_end: str | None = None,
@@ -129,8 +141,8 @@ async def ingest_eia_retail_sales(
     settings = Settings()
     if not settings.eia_api_key:
         raise ValueError("EIA_API_KEY is required for ingest_eia_retail_sales")
-    if not settings.effective_ingest_url:
-        raise ValueError("INGEST_DATABASE_URL (or DATABASE_URL) is required for ingest_eia_retail_sales")
+    if not settings.ingest_database_url:
+        raise ValueError("INGEST_DATABASE_URL is required for ingest_eia_retail_sales")
 
     start, end = resolve_date_range(date_start, date_end)
     logger.info("Ingest date range: start=%s end=%s", start, end)
@@ -145,6 +157,8 @@ async def ingest_eia_retail_sales(
         start=start,
         end=end,
     )
-    total = upsert_retail_sales_task(settings.effective_ingest_url, data)
+    total = upsert_retail_sales_task(settings.ingest_database_url, data)
+    if total == 0:
+        raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
     logger.info("Ingest complete: total rows upserted=%s", total)
     return total

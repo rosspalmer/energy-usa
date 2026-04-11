@@ -1,7 +1,7 @@
 [project]
 name = "energy-usa"
 version = "0.1.0"
-description = "Live and historical US energy data (Postgres + Prefect); Django+Dash web app"
+description = "Live and historical US energy data (Postgres + Prefect); Superset BI dashboard"
 readme = "README.md"
 authors = [
     { name = "Ross Palmer", email = "rpalmer@sovrn.com" }
@@ -15,16 +15,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-web = [
-    "django>=5.0",
-    "django-plotly-dash>=2.0",
-    "dash>=2.0",
-    "plotly>=5.0",
-    "pandas>=2.0",
-    "psycopg[binary]>=3.1.0",
-    "gunicorn>=22.0",
-    "whitenoise>=6.0",
-]
 notebook = [
     "jupyterlab>=4.0",
     "ipykernel>=6.0",
@@ -34,18 +24,11 @@ notebook = [
 test = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "pytest-django>=4.8",
-    "django>=5.0",
-    "django-plotly-dash>=2.0",
-    "dash>=2.0",
-    "plotly>=5.0",
-    "pandas>=2.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-DJANGO_SETTINGS_MODULE = "config.settings"
-pythonpath = ["src", "web"]
+pythonpath = ["src"]
 testpaths = ["tests"]
 markers = [
     "integration: tests that require a running Postgres database",

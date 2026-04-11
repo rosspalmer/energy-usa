@@ -31,7 +31,7 @@ def upsert_state_summary(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
     if not rows:
         return 0
     sql = """
-    INSERT INTO eia_state_summary (
+    INSERT INTO ingest.eia_state_summary (
         period, stateid, average_retail_price, total_generation, total_consumption, ingested_at
     )
     VALUES (%(period)s, %(stateid)s, %(average_retail_price)s, %(total_generation)s, %(total_consumption)s, now())

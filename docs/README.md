@@ -20,5 +20,5 @@ make help              # All available commands
 
 make backfill DATASET=retail_sales START=2020-01 END=2024-12   # Load historical data
 make export TABLE=eia_retail_sales OUT=exports/retail.csv       # Export to CSV
-make web               # Start the dashboard locally
+make jupyter           # Start Jupyter Lab locally
 ```

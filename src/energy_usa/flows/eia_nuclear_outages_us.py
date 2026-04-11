@@ -13,7 +13,7 @@ from energy_usa.config import Settings
 from energy_usa.db.retail_sales import get_connection
 from energy_usa.db.nuclear_outages_us import upsert_nuclear_outages_us
 from energy_usa.eia.manager import EIAManager
-from energy_usa.flows.date_range import resolve_date_range
+from energy_usa.flows.date_range import make_run_name, resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
 EIA_NUCLEAR_OUTAGES_US_COLUMNS = ["capacity", "outage", "percentOutage"]
@@ -56,7 +56,10 @@ async def fetch_eia_nuclear_outages_us(
                     if offset >= int(total_available):
                         break
                 except (TypeError, ValueError):
-                    pass
+                    logger.warning(
+                        "Unexpected 'total' value from EIA API: %r — skipping pagination check",
+                        total_available,
+                    )
             if page_delay_seconds > 0:
                 await asyncio.sleep(page_delay_seconds)
         logger.info("Fetch complete: total rows=%s", len(all_data))
@@ -74,7 +77,17 @@ def upsert_nuclear_outages_us_task(database_url: str, rows: list[dict[str, Any]]
         conn.close()
 
 
-@flow(name="ingest-eia-nuclear-outages-us", retries=2)
+def _run_name(**kwargs):
+    return make_run_name("daily", kwargs.get("date_start"), kwargs.get("date_end"))
+
+
+@flow(
+    name="ingest-eia-nuclear-outages-us",
+    flow_run_name=_run_name,
+    retries=2,
+    retry_delay_seconds=60,
+    timeout_seconds=900,
+)
 async def ingest_eia_nuclear_outages_us(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
@@ -83,7 +96,7 @@ async def ingest_eia_nuclear_outages_us(
     settings = Settings()
     if not settings.eia_api_key:
         raise ValueError("EIA_API_KEY required")
-    if not settings.effective_ingest_url:
+    if not settings.ingest_database_url:
         raise ValueError("INGEST_DATABASE_URL required")
     start, end = resolve_date_range(date_start, date_end)
     data = await fetch_eia_nuclear_outages_us(
@@ -94,7 +107,7 @@ async def ingest_eia_nuclear_outages_us(
         page_delay_seconds=settings.eia_page_delay_seconds,
         start=start, end=end,
     )
-    total = upsert_nuclear_outages_us_task(settings.effective_ingest_url, data)
+    total = upsert_nuclear_outages_us_task(settings.ingest_database_url, data)
     if total == 0:
         raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
     logger.info("Complete: rows_upserted=%s", total)

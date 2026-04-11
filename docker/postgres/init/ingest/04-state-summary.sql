@@ -1,6 +1,6 @@
 -- Ingest table for EIA state-electricity-profiles summary data.
 -- Unique on (period, stateid) for idempotent upserts.
-CREATE TABLE IF NOT EXISTS eia_state_summary (
+CREATE TABLE IF NOT EXISTS ingest.eia_state_summary (
     period DATE NOT NULL,
     stateid TEXT NOT NULL,
     average_retail_price NUMERIC,
