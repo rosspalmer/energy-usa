@@ -10,9 +10,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from energy_usa.db.retail_sales import upsert_retail_sales
-from energy_usa.db.electric_power_operational import upsert_electric_power_operational
-from energy_usa.db.state_summary import upsert_state_summary
+from energy_usa.db.ingest.eia.retail_sales import upsert_retail_sales
+from energy_usa.db.ingest.eia.electric_power_operational import upsert_electric_power_operational
+from energy_usa.db.ingest.eia.state_summary import upsert_state_summary
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
