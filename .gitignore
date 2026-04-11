@@ -17,3 +17,6 @@ wheels/
 
 # CSV exports (keep the directory, not the files)
 exports/*.csv
+
+# JetBrains internals
+.idea/
