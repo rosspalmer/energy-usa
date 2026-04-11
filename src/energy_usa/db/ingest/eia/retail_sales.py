@@ -1,0 +1,59 @@
+"""Upsert EIA electricity retail-sales rows into Postgres.
+
+Uses the eia.retail_sales table with unique (period, stateid, sectorid).
+Expects row dicts with keys: period, stateid, sectorid, revenue, sales, price, customers.
+Period is stored as DATE (first day of month); cadence is monthly.
+"""
+
+from typing import Any
+
+import psycopg
+
+from energy_usa.db.period import normalize_period
+
+
+def upsert_retail_sales(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
+    """Upsert EIA retail-sales rows into eia_retail_sales.
+
+    Each row must have period, stateid, sectorid; revenue, sales, price, customers
+    may be missing (stored as NULL). On conflict on (period, stateid, sectorid)
+    existing rows are updated. ingested_at is set to now().
+
+    :param conn: An open psycopg connection.
+    :param rows: List of dicts with keys period, stateid, sectorid, and optionally
+        revenue, sales, price, customers (numeric or None).
+    :returns: Number of rows affected (inserted or updated).
+    """
+    if not rows:
+        return 0
+    sql = """
+    INSERT INTO eia.retail_sales (period, stateid, sectorid, revenue, sales, price, customers, ingested_at)
+    VALUES (%(period)s, %(stateid)s, %(sectorid)s, %(revenue)s, %(sales)s, %(price)s, %(customers)s, now())
+    ON CONFLICT (period, stateid, sectorid)
+    DO UPDATE SET
+        revenue = EXCLUDED.revenue, 
+        sales = EXCLUDED.sales,
+        price = EXCLUDED.price,
+        customers = EXCLUDED.customers,
+        ingested_at = now()
+    """
+    normalized = []
+    for r in rows:
+        period_date = normalize_period(r.get("period"), "monthly")
+        if period_date is None:
+            continue
+        normalized.append({
+            "period": period_date,
+            "stateid": r.get("stateid"),
+            "sectorid": r.get("sectorid"),
+            "revenue": r.get("revenue"),
+            "sales": r.get("sales"),
+            "price": r.get("price"),
+            "customers": r.get("customers"),
+        })
+    if not normalized:
+        return 0
+    with conn.cursor() as cur:
+        cur.executemany(sql, normalized)
+    conn.commit()
+    return len(normalized)
