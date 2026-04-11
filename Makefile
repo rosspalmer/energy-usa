@@ -9,7 +9,7 @@ START     ?=                        # Start period YYYY-MM (blank = last calenda
 END       ?=                        # End period YYYY-MM (blank = current month)
 CHUNKS    ?= 1                      # Months per backfill chunk
 SERVICE   ?=                        # Service name for `make logs` (blank = all)
-TABLE     ?= eia_retail_sales       # Table for `make export`
+TABLE     ?= eia.retail_sales       # Table for `make export` (schema.table format)
 FILTER    ?=                        # Optional SQL WHERE clause for `make export` (e.g. "stateid='CA'")
 OUT       ?= exports/$(TABLE).csv   # Output path for `make export`
 

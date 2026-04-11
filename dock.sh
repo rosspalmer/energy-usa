@@ -105,7 +105,15 @@ cmd_cancel() {
 
 cmd_ensure_ingest_db() {
   echo "Creating ingest database and tables (idempotent)..."
-  $COMPOSE_CMD exec postgres bash -c 'export PGPASSWORD="$POSTGRES_PASSWORD"; psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE ingest;" 2>/dev/null || true; for f in /docker-entrypoint-initdb.d/ingest/*.sql; do psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d ingest -f "$f"; done; echo "Ingest database ready."'
+  $COMPOSE_CMD exec postgres bash -c '
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE ingest;" 2>/dev/null || true
+    psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE transform;" 2>/dev/null || true
+    find /docker-entrypoint-initdb.d/ingest -name "*.sql" | sort | while read f; do
+      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d ingest -f "$f"
+    done
+    echo "Ingest database ready."
+  '
 }
 
 case "${1:-}" in

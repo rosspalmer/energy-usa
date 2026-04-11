@@ -49,3 +49,7 @@ class Settings(BaseSettings):
     ingest_database_url: str = ""
     """PostgreSQL connection URL for the EIA ingest database.
     Example: postgresql://user:password@host:5432/ingest. Empty means ingest features are disabled."""
+
+    transform_database_url: str = ""
+    """PostgreSQL connection URL for the transform database.
+    Example: postgresql://user:password@host:5432/transform. Empty means transform features are disabled."""

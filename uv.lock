@@ -825,6 +825,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "jinja2" },
     { name = "prefect" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
@@ -846,6 +847,7 @@ test = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", marker = "extra == 'notebook'", specifier = ">=6.0" },
+    { name = "jinja2", specifier = ">=3.1" },
     { name = "jupyter-ai", marker = "extra == 'notebook'", specifier = ">=2.0" },
     { name = "jupyterlab", marker = "extra == 'notebook'", specifier = ">=4.0" },
     { name = "langchain-anthropic", marker = "extra == 'notebook'", specifier = ">=0.3" },
