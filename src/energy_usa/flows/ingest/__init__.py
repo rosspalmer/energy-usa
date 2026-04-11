@@ -1,4 +1,4 @@
-"""Prefect flows for scheduled ingest, validation, and transform jobs."""
+"""Ingest flows, organized by source."""
 
 from energy_usa.flows.ingest.backfill import backfill_eia
 
