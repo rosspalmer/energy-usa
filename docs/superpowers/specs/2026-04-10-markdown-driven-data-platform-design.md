@@ -496,6 +496,48 @@ make generate-transform DOMAIN=...                 # Transform scaffold
 2. Regenerate audit rules SQL
 3. `make validate SOURCE=<source>`
 
+## Documentation Updates
+
+The following documentation must be updated as part of implementation to reflect
+the new architecture:
+
+### CLAUDE.md
+- **Architecture section**: Update data flow diagram to show ingest → validate → transform → visualize pipeline
+- **Key Components**: Restructure to reflect `clients/`, nested `db/ingest/`, `db/transform/`, `db/quality/`, nested `flows/`, and `generators/`
+- **Databases table**: Add `transform` database with `TRANSFORM_DATABASE_URL`, add `quality` schema description
+- **Ingest Patterns**: Document the markdown-spec-driven workflow and generator commands
+- **Common Commands**: Add `make generate-ingest`, `make generate-validate`, `make generate-transform`, `make validate`, `make audit`
+- **Code Style**: Add spec format conventions (markdown table format, required sections)
+
+### README.md
+- Update project description to reflect the markdown-driven development pattern
+- Update architecture overview and data flow
+- Add section on specs (`specs/` directory purpose and structure)
+- Update quick-start commands to include generation workflow
+
+### docs/README.md (index)
+- Add entries for this design spec
+- Add entries for any new guides created during implementation (e.g., writing specs, using generators)
+
+### docs/ingest-flows.md
+- Update to reflect new directory structure (`flows/ingest/<source>/`)
+- Document generator workflow: spec → generate → review → commit → deploy → backfill
+- Update table/schema names from `ingest.eia_*` to `eia.*`
+
+### docs/getting-started.md
+- Update setup instructions for new `TRANSFORM_DATABASE_URL` env var
+- Update first-run walkthrough to use new schema names
+- Add generator quick-start
+
+### docs/data-analysis.md
+- Update table references from `ingest.eia_*` to `eia.*`
+- Add transform layer tables as query targets
+- Add quality audit tables for data quality exploration
+
+### New Documentation
+- `docs/writing-specs.md` — How to write ingest, validate, transform, and visualize specs. Targeted at both audiences: data engineers authoring specs and industry professionals understanding what the specs mean.
+- `specs/README.md` — Quick reference for spec formats, conventions, and which automation level applies to each layer.
+
 ## What Changes vs. What Stays
 
 | Stays the same | Changes |
