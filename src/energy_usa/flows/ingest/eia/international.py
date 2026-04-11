@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA International and upsert into ingest.eia_international.
+"""Prefect flow: fetch EIA International and upsert into eia.international.
 
 Annual international energy data by country, product, and activity. Period stored as DATE (Jan 1).
 """
@@ -94,7 +94,7 @@ def _run_name(**kwargs):
 async def ingest_eia_international(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA international energy data and upsert into ingest.eia_international.
+    """Fetch EIA international energy data and upsert into eia.international.
 
     Very large dataset — use narrow year windows and expect many pages.
     """

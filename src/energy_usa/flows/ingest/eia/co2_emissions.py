@@ -93,7 +93,7 @@ def _run_name(**kwargs):
 async def ingest_eia_co2_emissions(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA CO2 emissions and upsert into ingest.eia_co2_emissions."""
+    """Fetch EIA CO2 emissions and upsert into eia.co2_emissions."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

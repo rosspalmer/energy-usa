@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA STEO and upsert into ingest.eia_steo.
+"""Prefect flow: fetch EIA STEO and upsert into eia.steo.
 
 Monthly short-term energy projections by series. Period stored as DATE (first of month).
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_steo(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA STEO projections and upsert into ingest.eia_steo."""
+    """Fetch EIA STEO projections and upsert into eia.steo."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

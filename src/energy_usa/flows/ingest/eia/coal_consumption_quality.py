@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_coal_consumption_quality(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA coal consumption/quality and upsert into ingest.eia_coal_consumption_quality."""
+    """Fetch EIA coal consumption/quality and upsert into eia.coal_consumption_quality."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

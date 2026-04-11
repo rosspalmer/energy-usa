@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA electricity/facility-fuel and upsert into ingest.eia_facility_fuel.
+"""Prefect flow: fetch EIA electricity/facility-fuel and upsert into eia.facility_fuel.
 
 Annual generation and fuel consumption per plant. Period stored as DATE (Jan 1 of year).
 Large dataset — use narrow date ranges or add facet filters for state via date_start/date_end year range.
@@ -108,7 +108,7 @@ async def ingest_eia_facility_fuel(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA facility-fuel annual data and upsert into ingest.eia_facility_fuel.
+    """Fetch EIA facility-fuel annual data and upsert into eia.facility_fuel.
 
     Source cadence: annual. Expect large volumes — use narrow year ranges.
     :param date_start: Start year/month (YYYY-MM). Defaults to last month.

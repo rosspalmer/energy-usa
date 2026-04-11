@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA crude-oil-imports and upsert into ingest.eia_crude_oil_imports.
+"""Prefect flow: fetch EIA crude-oil-imports and upsert into eia.crude_oil_imports.
 
 Monthly crude oil imports by origin, destination, grade, and refiner type.
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_crude_oil_imports(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA crude oil imports and upsert into ingest.eia_crude_oil_imports."""
+    """Fetch EIA crude oil imports and upsert into eia.crude_oil_imports."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

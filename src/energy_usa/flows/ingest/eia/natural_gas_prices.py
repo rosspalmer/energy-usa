@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA natural-gas/pri/sum and upsert into ingest.eia_natural_gas_prices.
+"""Prefect flow: fetch EIA natural-gas/pri/sum and upsert into eia.natural_gas_prices.
 
 Monthly natural gas prices by area and series. Period stored as DATE (first of month).
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_natural_gas_prices(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA natural gas prices and upsert into ingest.eia_natural_gas_prices."""
+    """Fetch EIA natural gas prices and upsert into eia.natural_gas_prices."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

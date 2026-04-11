@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA electricity/rto/region-data and upsert into ingest.eia_rto_region_data.
+"""Prefect flow: fetch EIA electricity/rto/region-data and upsert into eia.rto_region_data.
 
 Hourly demand, net generation, and total interchange per RTO region.
 Period stored as TEXT. Default: last calendar month (1-month windows recommended due to volume).
@@ -106,7 +106,7 @@ async def ingest_eia_rto_region_data(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA RTO hourly region data and upsert into ingest.eia_rto_region_data.
+    """Fetch EIA RTO hourly region data and upsert into eia.rto_region_data.
 
     Due to hourly volume, use 1-month windows for backfill.
     :param date_start: Start (YYYY-MM). Defaults to last month.

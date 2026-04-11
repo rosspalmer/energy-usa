@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_coal_mine_production(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA coal mine production and upsert into ingest.eia_coal_mine_production."""
+    """Fetch EIA coal mine production and upsert into eia.coal_mine_production."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

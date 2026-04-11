@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA AEO (Annual Energy Outlook) and upsert into ingest.eia_aeo.
+"""Prefect flow: fetch EIA AEO (Annual Energy Outlook) and upsert into eia.aeo.
 
 Long-term US energy projections. aeo_year parameter selects the vintage (default: latest=2023).
 Period stored as DATE (Jan 1 of projection year).
@@ -103,7 +103,7 @@ async def ingest_eia_aeo(
     date_end: str | None = None,
     aeo_year: str = EIA_AEO_DEFAULT_YEAR,
 ) -> int:
-    """Fetch EIA Annual Energy Outlook projections and upsert into ingest.eia_aeo.
+    """Fetch EIA Annual Energy Outlook projections and upsert into eia.aeo.
 
     :param date_start: Start projection year (YYYY-MM). Defaults to first projection year.
     :param date_end: End projection year (YYYY-MM). Defaults to last projection year.

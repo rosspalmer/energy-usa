@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA petroleum/sum/snd and upsert into ingest.eia_petroleum_supply.
+"""Prefect flow: fetch EIA petroleum/sum/snd and upsert into eia.petroleum_supply.
 
 Monthly petroleum supply and disposition. Period stored as DATE (first of month).
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_petroleum_supply(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA petroleum supply and upsert into ingest.eia_petroleum_supply."""
+    """Fetch EIA petroleum supply and upsert into eia.petroleum_supply."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

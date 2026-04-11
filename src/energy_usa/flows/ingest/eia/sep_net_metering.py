@@ -93,7 +93,7 @@ def _run_name(**kwargs):
 async def ingest_eia_sep_net_metering(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA state electricity profile net metering and upsert into ingest.eia_sep_net_metering."""
+    """Fetch EIA state electricity profile net metering and upsert into eia.sep_net_metering."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

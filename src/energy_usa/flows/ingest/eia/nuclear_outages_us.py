@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_nuclear_outages_us(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA US nuclear outages and upsert into ingest.eia_nuclear_outages_us."""
+    """Fetch EIA US nuclear outages and upsert into eia.nuclear_outages_us."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

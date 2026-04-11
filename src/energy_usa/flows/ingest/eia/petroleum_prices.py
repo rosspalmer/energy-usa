@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA petroleum/pri/gnd and upsert into ingest.eia_petroleum_prices.
+"""Prefect flow: fetch EIA petroleum/pri/gnd and upsert into eia.petroleum_prices.
 
 Weekly retail gasoline and diesel prices. Period stored as DATE.
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_petroleum_prices(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA petroleum retail prices and upsert into ingest.eia_petroleum_prices."""
+    """Fetch EIA petroleum retail prices and upsert into eia.petroleum_prices."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

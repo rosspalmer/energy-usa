@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA total-energy and upsert into ingest.eia_total_energy.
+"""Prefect flow: fetch EIA total-energy and upsert into eia.total_energy.
 
 Monthly US total energy by MSN series code. Period stored as DATE (first of month).
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_total_energy(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA total energy and upsert into ingest.eia_total_energy."""
+    """Fetch EIA total energy and upsert into eia.total_energy."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

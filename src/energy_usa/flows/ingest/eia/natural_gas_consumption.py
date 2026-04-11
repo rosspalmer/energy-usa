@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA natural-gas/cons/sum and upsert into ingest.eia_natural_gas_consumption.
+"""Prefect flow: fetch EIA natural-gas/cons/sum and upsert into eia.natural_gas_consumption.
 
 Monthly natural gas consumption by area and sector. Period stored as DATE (first of month).
 """
@@ -91,7 +91,7 @@ def _run_name(**kwargs):
 async def ingest_eia_natural_gas_consumption(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA natural gas consumption and upsert into ingest.eia_natural_gas_consumption."""
+    """Fetch EIA natural gas consumption and upsert into eia.natural_gas_consumption."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

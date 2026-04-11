@@ -93,7 +93,7 @@ def _run_name(**kwargs):
 async def ingest_eia_biomass_production(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA biomass production and upsert into ingest.eia_biomass_production."""
+    """Fetch EIA biomass production and upsert into eia.biomass_production."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA SEDS and upsert into ingest.eia_seds.
+"""Prefect flow: fetch EIA SEDS and upsert into eia.seds.
 
 Annual state energy data by MSN series code. Period stored as DATE (Jan 1).
 """
@@ -94,7 +94,7 @@ def _run_name(**kwargs):
 async def ingest_eia_seds(
     date_start: str | None = None, date_end: str | None = None,
 ) -> int:
-    """Fetch EIA SEDS annual state energy data and upsert into ingest.eia_seds.
+    """Fetch EIA SEDS annual state energy data and upsert into eia.seds.
 
     SEDS is a large annual dataset — use narrow year ranges for initial backfill.
     """

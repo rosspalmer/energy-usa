@@ -97,7 +97,7 @@ async def ingest_eia_rto_interchange_data(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA RTO interchange data and upsert into ingest.eia_rto_interchange_data."""
+    """Fetch EIA RTO interchange data and upsert into eia.rto_interchange_data."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

@@ -97,7 +97,7 @@ async def ingest_eia_rto_region_sub_ba_data(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA RTO sub-BA hourly data and upsert into ingest.eia_rto_region_sub_ba_data."""
+    """Fetch EIA RTO sub-BA hourly data and upsert into eia.rto_region_sub_ba_data."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

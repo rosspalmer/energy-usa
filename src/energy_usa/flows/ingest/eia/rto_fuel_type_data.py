@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA electricity/rto/fuel-type-data and upsert into ingest.eia_rto_fuel_type_data.
+"""Prefect flow: fetch EIA electricity/rto/fuel-type-data and upsert into eia.rto_fuel_type_data.
 
 Hourly generation by fuel type per RTO. Period stored as TEXT.
 """
@@ -99,7 +99,7 @@ async def ingest_eia_rto_fuel_type_data(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA RTO hourly fuel-type data and upsert into ingest.eia_rto_fuel_type_data."""
+    """Fetch EIA RTO hourly fuel-type data and upsert into eia.rto_fuel_type_data."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

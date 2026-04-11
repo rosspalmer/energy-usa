@@ -99,7 +99,7 @@ async def ingest_eia_operating_generator_capacity(
     date_start: str | None = None,
     date_end: str | None = None,
 ) -> int:
-    """Fetch EIA operating generator capacity and upsert into ingest.eia_operating_generator_capacity."""
+    """Fetch EIA operating generator capacity and upsert into eia.operating_generator_capacity."""
     logger = get_run_logger()
     settings = Settings()
     if not settings.eia_api_key:

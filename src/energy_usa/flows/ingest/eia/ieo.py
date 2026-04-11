@@ -1,4 +1,4 @@
-"""Prefect flow: fetch EIA IEO (International Energy Outlook) and upsert into ingest.eia_ieo.
+"""Prefect flow: fetch EIA IEO (International Energy Outlook) and upsert into eia.ieo.
 
 Long-term global energy projections by region. ieo_year parameter selects the vintage.
 Period stored as DATE (Jan 1 of projection year).
@@ -98,7 +98,7 @@ async def ingest_eia_ieo(
     date_end: str | None = None,
     ieo_year: str = EIA_IEO_DEFAULT_YEAR,
 ) -> int:
-    """Fetch EIA International Energy Outlook projections and upsert into ingest.eia_ieo.
+    """Fetch EIA International Energy Outlook projections and upsert into eia.ieo.
 
     :param ieo_year: IEO vintage (e.g. "2023"). Route: ieo/{ieo_year}/data.
     """
