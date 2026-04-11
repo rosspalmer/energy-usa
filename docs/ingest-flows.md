@@ -12,10 +12,10 @@ There are four datasets ("flows"), each corresponding to a database table:
 
 | Flow | Table | What it contains |
 |------|-------|-----------------|
-| `retail_sales` | `eia_retail_sales` | Monthly electricity sales, revenue, price per kWh, and customer counts — broken down by state and sector (residential, commercial, industrial, transport) |
-| `electric_power_operational` | `eia_electric_power_operational` | Monthly electricity generation by state, sector, and fuel type (coal, gas, nuclear, wind, solar, etc.) |
-| `state_source_disposition` | `eia_state_source_disposition` | Monthly net interstate electricity trade and total disposition — how much electricity states import/export from each other |
-| `state_summary` | `eia_state_summary` | Annual summary per state: average retail price, total generation, total consumption |
+| `retail_sales` | `eia.retail_sales` | Monthly electricity sales, revenue, price per kWh, and customer counts — broken down by state and sector (residential, commercial, industrial, transport) |
+| `electric_power_operational` | `eia.electric_power_operational` | Monthly electricity generation by state, sector, and fuel type (coal, gas, nuclear, wind, solar, etc.) |
+| `state_source_disposition` | `eia.state_source_disposition` | Monthly net interstate electricity trade and total disposition — how much electricity states import/export from each other |
+| `state_summary` | `eia.state_summary` | Annual summary per state: average retail price, total generation, total consumption |
 
 ---
 
@@ -91,14 +91,15 @@ Make sure `.env` has `INGEST_DATABASE_URL` pointing to a running Postgres.
 **Connection timeout / EIA API slow**
 The EIA API occasionally times out under load. The code automatically retries up to 5 times with exponential backoff. If it keeps failing, try again later or reduce `EIA_MAX_CONCURRENT_REQUESTS` in `.env`.
 
-**`relation "eia_retail_sales" does not exist`**
-The ingest database tables haven't been created. Run:
+**`relation "eia.retail_sales" does not exist`**
+The ingest database schema and tables haven't been created. Run:
 ```bash
 # Docker stack
 ./dock.sh ensure-ingest-db
 
 # Local Postgres
-for f in docker/postgres/init/ingest/*.sql; do psql -d ingest -f "$f"; done
+psql -d ingest -f docker/postgres/init/ingest/eia/00-schema.sql
+for f in docker/postgres/init/ingest/eia/*.sql; do psql -d ingest -f "$f"; done
 ```
 
 ---
@@ -109,13 +110,13 @@ After a backfill, check row counts and date ranges using DBeaver or the pgweb br
 
 ```sql
 -- Row counts per table
-SELECT 'eia_retail_sales' AS table_name, COUNT(*), MIN(period), MAX(period) FROM eia_retail_sales
+SELECT 'eia.retail_sales' AS table_name, COUNT(*), MIN(period), MAX(period) FROM eia.retail_sales
 UNION ALL
-SELECT 'eia_electric_power_operational', COUNT(*), MIN(period), MAX(period) FROM eia_electric_power_operational
+SELECT 'eia.electric_power_operational', COUNT(*), MIN(period), MAX(period) FROM eia.electric_power_operational
 UNION ALL
-SELECT 'eia_state_source_disposition', COUNT(*), MIN(period), MAX(period) FROM eia_state_source_disposition
+SELECT 'eia.state_source_disposition', COUNT(*), MIN(period), MAX(period) FROM eia.state_source_disposition
 UNION ALL
-SELECT 'eia_state_summary', COUNT(*), MIN(period), MAX(period) FROM eia_state_summary;
+SELECT 'eia.state_summary', COUNT(*), MIN(period), MAX(period) FROM eia.state_summary;
 ```
 
 ---

@@ -39,8 +39,8 @@ make run FLOW=backfill-eia START=2020-01 END=2024-12
 make jupyter                         # Jupyter Lab (no Docker)
 
 # Data export for analysis
-make export TABLE=eia_retail_sales OUT=exports/retail_sales.csv
-make export TABLE=eia_retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
+make export TABLE=eia.retail_sales OUT=exports/retail_sales.csv
+make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
 ```
 
 > **Note:** The Makefile wraps `dock.sh` for Docker targets. `dock.sh` remains available for lower-level Docker Compose control.
@@ -67,7 +67,11 @@ Copy `.env.example` to `.env`. Required:
 ### Data Flow
 
 ```
-EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
+EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (eia.* schema)
+                                                        ↓
+                                              Validation Flows → quality.*
+                                                        ↓
+                                              Transform Flows → transform DB
                                                         ↓
                                                 Superset Dashboard
 ```
@@ -75,26 +79,30 @@ EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (ingest DB)
 ### Key Components
 
 **`src/energy_usa/`** — Core Python package, no Django dependency
-- `eia/client.py` — Async HTTP client with pagination and facet support
-- `eia/manager.py` — Concurrency semaphore + exponential backoff retries
-- `db/` — Direct psycopg3 SQL, no ORM; one module per table, all upserts are idempotent
+- `clients/eia.py` — Async HTTP client with pagination, facet support, concurrency semaphore, and exponential backoff retries; implements the `DataClient` protocol from `clients/base.py`
+- `db/connection.py` — Shared psycopg3 connection helper
+- `db/ingest/eia/` — Direct psycopg3 SQL, no ORM; one module per table, all upserts are idempotent
 - `db/dataframe.py` — `query_to_dataframe(url, sql)` for SQL → pandas
-- `flows/` — Prefect flows; each dataset = one fetch task + one upsert task
-- `flows/backfill_eia.py` — Chunks date ranges and submits child flow runs
+- `flows/ingest/eia/` — Prefect flows; each dataset = one fetch task + one upsert task; discovered dynamically at deploy time
+- `flows/ingest/backfill.py` — Chunks date ranges and submits child flow runs via dynamic discovery
 - `config.py` — pydantic-settings loaded from `.env`
 
 **`docker/postgres/init/`** — SQL run on first container start; source of truth for schemas
-- `init/ingest/` — Table DDL for all four EIA datasets
+- `init/ingest/eia/` — Table DDL for all EIA datasets under the `eia` schema
+- `init/ingest/00-quality-schema.sql` — Quality audit schema (`quality.*`)
+- `init/transform/` — Transform database schema placeholder
 
 ### Databases
 
 | Database | Connection var | Purpose |
 |----------|---------------|---------|
-| `ingest` | `INGEST_DATABASE_URL` | EIA raw data tables |
+| `ingest` | `INGEST_DATABASE_URL` | EIA raw data (`eia.*` schema), quality audits (`quality.*` schema) |
+| `transform` | `TRANSFORM_DATABASE_URL` | Domain models (`electricity.*`, `fossil_fuels.*`, etc.) |
 
 ### Ingest Patterns
 
 - All writes: idempotent upserts (`ON CONFLICT DO UPDATE`)
+- Tables live in the `eia` schema: e.g. `eia.retail_sales`, `eia.electric_power_operational`
 - Unique keys: `(period, stateid, sectorid)` or `(period, stateid)`
 - Periods stored as `DATE`; annual data as `YYYY-01-01`
 - Historical data is the priority — live/scheduled ingest is secondary
@@ -149,7 +157,7 @@ Best for quick, non-technical analysis. Export a slice of data to CSV and upload
 
 ```bash
 # Export a focused slice
-make export TABLE=eia_retail_sales FILTER="stateid='TX' AND period > '2015-01-01'" OUT=exports/tx_retail.csv
+make export TABLE=eia.retail_sales FILTER="stateid='TX' AND period > '2015-01-01'" OUT=exports/tx_retail.csv
 ```
 
 Then at [claude.ai](https://claude.ai): attach the CSV and ask questions in plain English. No code required. Useful for: exploring unfamiliar datasets, drafting visualizations, writing SQL for the first time.

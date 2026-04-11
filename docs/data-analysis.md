@@ -22,14 +22,14 @@ DBeaver is a free desktop app for exploring databases visually — browse tables
 5. Click **Test Connection** (it may ask to download a driver — say yes)
 6. Finish
 
-You should now see the `ingest` database with tables like `eia_retail_sales` in the left panel.
+You should now see the `ingest` database with the `eia` schema and tables like `eia.retail_sales` in the left panel.
 
 ### Example queries to get started
 
 ```sql
 -- Average electricity price by state, most recent year
 SELECT stateid, AVG(price) AS avg_price_cents_per_kwh
-FROM eia_retail_sales
+FROM eia.retail_sales
 WHERE period >= '2023-01-01'
   AND sectorid = 'RES'   -- residential customers
 GROUP BY stateid
@@ -37,14 +37,14 @@ ORDER BY avg_price_cents_per_kwh DESC;
 
 -- Monthly generation trend for California, all fuel types
 SELECT period, fueltypeid, generation
-FROM eia_electric_power_operational
+FROM eia.electric_power_operational
 WHERE stateid = 'CA'
   AND period >= '2020-01-01'
 ORDER BY period, fueltypeid;
 
 -- Which states import the most electricity?
 SELECT stateid, AVG(net_interstate_trade) AS avg_net_import_mwh
-FROM eia_state_source_disposition
+FROM eia.state_source_disposition
 WHERE period >= '2020-01-01'
 GROUP BY stateid
 ORDER BY avg_net_import_mwh ASC
@@ -56,8 +56,8 @@ LIMIT 10;
 Right-click any query result → Export → CSV. Or use the command line:
 
 ```bash
-make export TABLE=eia_retail_sales
-make export TABLE=eia_retail_sales FILTER="stateid='TX'" OUT=exports/tx_retail.csv
+make export TABLE=eia.retail_sales
+make export TABLE=eia.retail_sales FILTER="stateid='TX'" OUT=exports/tx_retail.csv
 ```
 
 Exported files go to the `exports/` folder at the project root.
@@ -91,7 +91,7 @@ url = os.environ["INGEST_DATABASE_URL"]
 
 df = query_to_dataframe(url, """
     SELECT period, stateid, sectorid, price
-    FROM eia_retail_sales
+    FROM eia.retail_sales
     WHERE stateid IN ('CA', 'TX', 'NY')
       AND sectorid = 'RES'
     ORDER BY period, stateid
@@ -144,13 +144,13 @@ The simplest approach — no Python, no SQL, no setup. Export a slice of data to
 
 ```bash
 # All California electricity sales
-make export TABLE=eia_retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
+make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
 
 # National data for a specific year
-make export TABLE=eia_retail_sales FILTER="period >= '2023-01-01' AND period < '2024-01-01'" OUT=exports/2023_retail.csv
+make export TABLE=eia.retail_sales FILTER="period >= '2023-01-01' AND period < '2024-01-01'" OUT=exports/2023_retail.csv
 
 # Generation by fuel type for Texas
-make export TABLE=eia_electric_power_operational FILTER="stateid='TX'" OUT=exports/tx_generation.csv
+make export TABLE=eia.electric_power_operational FILTER="stateid='TX'" OUT=exports/tx_generation.csv
 ```
 
 ### Step 2: Upload to Claude.ai
@@ -179,7 +179,7 @@ Claude can read the data, calculate statistics, identify trends, and suggest exp
 
 ## Understanding the data columns
 
-### `eia_retail_sales`
+### `eia.retail_sales`
 
 | Column | Description | Units |
 |--------|-------------|-------|
@@ -191,7 +191,7 @@ Claude can read the data, calculate statistics, identify trends, and suggest exp
 | `price` | Average retail price | Cents per kWh |
 | `customers` | Number of customers | Count |
 
-### `eia_electric_power_operational`
+### `eia.electric_power_operational`
 
 | Column | Description | Units |
 |--------|-------------|-------|
@@ -201,7 +201,7 @@ Claude can read the data, calculate statistics, identify trends, and suggest exp
 | `fueltypeid` | Fuel type: `COL` coal, `NG` natural gas, `NUC` nuclear, `WND` wind, `SUN` solar, `HYC` hydro, etc. | — |
 | `generation` | Electricity generated | Thousand MWh |
 
-### `eia_state_source_disposition`
+### `eia.state_source_disposition`
 
 | Column | Description | Units |
 |--------|-------------|-------|
@@ -210,7 +210,7 @@ Claude can read the data, calculate statistics, identify trends, and suggest exp
 | `net_interstate_trade` | Net electricity imported from other states (negative = net exporter) | Thousand MWh |
 | `total_disposition` | Total electricity disposed of (sales + losses + exports) | Thousand MWh |
 
-### `eia_state_summary`
+### `eia.state_summary`
 
 | Column | Description | Units |
 |--------|-------------|-------|

@@ -155,14 +155,14 @@ Open http://localhost:8000.
 
 ## What's in the database?
 
-After a backfill, you'll have four tables in the `ingest` database:
+After a backfill, you'll have four tables in the `eia` schema of the `ingest` database:
 
 | Table | What it contains | Frequency |
 |-------|-----------------|-----------|
-| `eia_retail_sales` | Electricity sales, revenue, price, and customers by state and sector | Monthly |
-| `eia_electric_power_operational` | Electricity generation by state, sector, and fuel type | Monthly |
-| `eia_state_source_disposition` | Net interstate electricity trade and total disposition by state | Monthly |
-| `eia_state_summary` | Annual summary: retail price, total generation, total consumption by state | Annual |
+| `eia.retail_sales` | Electricity sales, revenue, price, and customers by state and sector | Monthly |
+| `eia.electric_power_operational` | Electricity generation by state, sector, and fuel type | Monthly |
+| `eia.state_source_disposition` | Net interstate electricity trade and total disposition by state | Monthly |
+| `eia.state_summary` | Annual summary: retail price, total generation, total consumption by state | Annual |
 
 See [Analyzing Data](data-analysis.md) for how to query and explore this data.
 

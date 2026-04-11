@@ -109,7 +109,7 @@ import os
 from energy_usa.db import query_to_dataframe
 
 url = os.environ["INGEST_DATABASE_URL"]
-df = query_to_dataframe(url, "SELECT period, stateid, sectorid, sales FROM eia_retail_sales LIMIT 100")
+df = query_to_dataframe(url, "SELECT period, stateid, sectorid, sales FROM eia.retail_sales LIMIT 100")
 df.head()
 ```
 
