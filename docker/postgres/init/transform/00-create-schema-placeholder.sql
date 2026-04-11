@@ -1,0 +1,2 @@
+-- Placeholder: transform schemas will be added by Plan 4.
+-- This file ensures the transform/ directory exists for the init script.
