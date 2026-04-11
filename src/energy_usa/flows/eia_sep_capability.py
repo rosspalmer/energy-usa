@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_SEP_CAPABILITY_COLUMNS = ["nameplate-capacity-mw", "net-summer-capacity-mw", "net-winter-capacity-mw"]
+EIA_SEP_CAPABILITY_COLUMNS = ["capability"]
 
 
 @task(name="fetch-eia-sep-capability")

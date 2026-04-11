@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_SEP_NET_METERING_COLUMNS = ["customers", "capacity", "generation"]
+EIA_SEP_NET_METERING_COLUMNS = ["customers", "capacity"]
 
 
 @task(name="fetch-eia-sep-net-metering")

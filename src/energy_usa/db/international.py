@@ -9,7 +9,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period
+from energy_usa.db.period import normalize_period, safe_numeric
 
 
 def upsert_international(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -50,7 +50,7 @@ def upsert_international(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             "country_region_id": r.get("countryRegionId") or r.get("country_region_id") or r.get("countryId") or "WORL",
             "country_region_name": r.get("countryRegionName") or r.get("country_region_name") or r.get("countryName"),
             "unit": r.get("unit") or r.get("units") or "NA",
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
         })
     if not normalized:
         return 0

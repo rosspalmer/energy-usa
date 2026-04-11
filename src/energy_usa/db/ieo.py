@@ -9,7 +9,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period
+from energy_usa.db.period import normalize_period, safe_numeric
 
 
 def upsert_ieo(conn: psycopg.Connection, rows: list[dict[str, Any]], ieo_year: str = "2023") -> int:
@@ -49,7 +49,7 @@ def upsert_ieo(conn: psycopg.Connection, rows: list[dict[str, Any]], ieo_year: s
             "region_name": r.get("regionName") or r.get("region_name"),
             "series_id": r.get("seriesId") or r.get("series_id") or r.get("series") or "NA",
             "series_description": r.get("seriesDescription") or r.get("series-description") or r.get("series_description"),
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
             "unit": r.get("unit") or r.get("units"),
         })
     if not normalized:

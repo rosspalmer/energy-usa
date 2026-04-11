@@ -49,9 +49,9 @@ def upsert_sep_capability(conn: psycopg.Connection, rows: list[dict[str, Any]]) 
             "state_description": r.get("stateDescription") or r.get("state_description"),
             "fueltypeid": r.get("fueltypeid") or r.get("fuelTypeId") or r.get("energysourceid"),
             "fuel_type_description": r.get("fuelTypeDescription") or r.get("fuel_type_description"),
-            "nameplate_capacity": r.get("nameplate-capacity-mw") or r.get("nameplatecapacity"),
-            "net_summer_capacity": r.get("net-summer-capacity-mw") or r.get("summercapacity"),
-            "net_winter_capacity": r.get("net-winter-capacity-mw") or r.get("wintercapacity"),
+            "nameplate_capacity": r.get("capability") or r.get("nameplate-capacity-mw") or r.get("nameplatecapacity"),
+            "net_summer_capacity": None,
+            "net_winter_capacity": None,
             "capacity_units": r.get("capacity-units") or "megawatts",
         })
     if not normalized:

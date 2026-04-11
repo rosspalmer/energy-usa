@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_SEP_EMISSIONS_COLUMNS = ["co2", "so2", "nox"]
+EIA_SEP_EMISSIONS_COLUMNS = ["co2-thousand-metric-tons", "so2-short-tons", "nox-short-tons"]
 
 
 @task(name="fetch-eia-sep-emissions")

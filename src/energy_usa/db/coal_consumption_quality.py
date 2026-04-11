@@ -52,9 +52,9 @@ def upsert_coal_consumption_quality(conn: psycopg.Connection, rows: list[dict[st
             "coal_rank_description": r.get("coalRankDescription") or r.get("coal_rank_description"),
             "consumption": r.get("consumption"),
             "consumption_units": r.get("consumption-units") or "thousand short tons",
-            "average_heat_content": r.get("average-heat-content") or r.get("averageHeatContent"),
-            "average_sulfur_content": r.get("average-sulfur-content") or r.get("averageSulfurContent"),
-            "average_ash_content": r.get("average-ash-content") or r.get("averageAshContent"),
+            "average_heat_content": r.get("heat-content") or r.get("average-heat-content") or r.get("averageHeatContent"),
+            "average_sulfur_content": r.get("sulfur-content") or r.get("average-sulfur-content") or r.get("averageSulfurContent"),
+            "average_ash_content": r.get("ash-content") or r.get("average-ash-content") or r.get("averageAshContent"),
         })
     if not normalized:
         return 0

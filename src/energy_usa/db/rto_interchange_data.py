@@ -9,7 +9,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period_text
+from energy_usa.db.period import normalize_period_text, safe_numeric
 
 
 def upsert_rto_interchange_data(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -46,7 +46,7 @@ def upsert_rto_interchange_data(conn: psycopg.Connection, rows: list[dict[str, A
             "fromba_name": r.get("fromba-name") or r.get("fromba_name"),
             "toba": r.get("toba"),
             "toba_name": r.get("toba-name") or r.get("toba_name"),
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
             "value_units": r.get("value-units") or r.get("value_units"),
         })
     if not normalized:

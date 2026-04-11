@@ -17,7 +17,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_FACILITY_FUEL_COLUMNS = ["generation", "consumption-ej", "consumption-mmbtus"]
+EIA_FACILITY_FUEL_COLUMNS = ["generation", "total-consumption-btu"]
 
 
 @task(name="fetch-eia-facility-fuel")

@@ -51,10 +51,10 @@ def upsert_sep_emissions(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             "sector_description": r.get("sectorDescription") or r.get("sector_description"),
             "fuel_id": r.get("fuelid") or r.get("fuelId") or r.get("fuel_id"),
             "fuel_description": r.get("fuelDescription") or r.get("fuel_description"),
-            "co2": r.get("co2") or r.get("CO2"),
-            "so2": r.get("so2") or r.get("SO2"),
-            "nox": r.get("nox") or r.get("NOx"),
-            "value_units": r.get("co2-units") or r.get("value_units"),
+            "co2": r.get("co2-thousand-metric-tons") or r.get("co2"),
+            "so2": r.get("so2-short-tons") or r.get("so2"),
+            "nox": r.get("nox-short-tons") or r.get("nox"),
+            "value_units": r.get("co2-thousand-metric-tons-units") or r.get("co2-units") or r.get("value_units"),
         })
     if not normalized:
         return 0

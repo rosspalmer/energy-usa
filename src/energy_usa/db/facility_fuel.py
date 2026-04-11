@@ -56,8 +56,8 @@ def upsert_facility_fuel(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             "fuel_type_description": r.get("fuelTypeDescription") or r.get("fuel_type_description"),
             "prime_mover": r.get("primeMover") or r.get("prime_mover"),
             "generation": r.get("generation"),
-            "consumption_ej": r.get("consumption-ej") or r.get("consumption_ej"),
-            "consumption_mmbtus": r.get("consumption-mmbtus") or r.get("consumption_mmbtus"),
+            "consumption_ej": None,
+            "consumption_mmbtus": r.get("total-consumption-btu") or r.get("consumption-mmbtus") or r.get("consumption_mmbtus"),
         })
     if not normalized:
         return 0

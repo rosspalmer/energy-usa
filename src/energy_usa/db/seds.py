@@ -8,7 +8,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period
+from energy_usa.db.period import normalize_period, safe_numeric
 
 
 def upsert_seds(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -42,7 +42,7 @@ def upsert_seds(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
             "msn": r.get("msn") or r.get("seriesId") or r.get("series") or "NA",
             "state_id": r.get("stateId") or r.get("state_id") or r.get("stateid") or "US",
             "state_description": r.get("stateDescription") or r.get("state_description"),
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
             "unit": r.get("unit") or r.get("units"),
         })
     if not normalized:

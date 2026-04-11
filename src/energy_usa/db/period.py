@@ -71,6 +71,16 @@ def normalize_period(raw: str | None, cadence: Cadence) -> date | None:
         return None
 
 
+def safe_numeric(val: object) -> float | None:
+    """Coerce an EIA value to float, returning None for non-numeric strings like 'Not Available'."""
+    if val is None:
+        return None
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
 def normalize_period_text(raw: str | None) -> str | None:
     """Return raw period string unchanged (for hourly/sub-hourly data stored as TEXT).
 

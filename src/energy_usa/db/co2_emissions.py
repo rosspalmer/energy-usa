@@ -8,7 +8,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period
+from energy_usa.db.period import normalize_period, safe_numeric
 
 
 def upsert_co2_emissions(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -49,7 +49,7 @@ def upsert_co2_emissions(conn: psycopg.Connection, rows: list[dict[str, Any]]) -
             "sector_description": r.get("sectorDescription") or r.get("sector_description"),
             "fuel_id": r.get("fuelId") or r.get("fuel_id") or r.get("fuelid") or "ALL",
             "fuel_description": r.get("fuelDescription") or r.get("fuel_description"),
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
             "value_units": r.get("value-units") or r.get("valueUnits") or "million metric tons CO2",
         })
     if not normalized:

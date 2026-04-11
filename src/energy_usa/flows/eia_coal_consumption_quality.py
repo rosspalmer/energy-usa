@@ -16,7 +16,7 @@ from energy_usa.eia.manager import EIAManager
 from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
-EIA_COAL_CONS_QUALITY_COLUMNS = ["consumption", "average-heat-content", "average-sulfur-content", "average-ash-content"]
+EIA_COAL_CONS_QUALITY_COLUMNS = ["consumption", "heat-content", "sulfur-content", "ash-content"]
 EIA_COAL_CONS_QUALITY_PATH = "coal/consumption-and-quality/data"
 
 

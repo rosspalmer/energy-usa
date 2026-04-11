@@ -8,7 +8,7 @@ from typing import Any
 
 import psycopg
 
-from energy_usa.db.period import normalize_period
+from energy_usa.db.period import normalize_period, safe_numeric
 
 
 def upsert_natural_gas_consumption(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
@@ -51,7 +51,7 @@ def upsert_natural_gas_consumption(conn: psycopg.Connection, rows: list[dict[str
             "process_name": r.get("process-name") or r.get("processName") or r.get("process_name"),
             "series": r.get("series") or r.get("seriesId") or "NA",
             "series_description": r.get("series-description") or r.get("seriesDescription") or r.get("series_description"),
-            "value": r.get("value"),
+            "value": safe_numeric(r.get("value")),
             "units": r.get("units") or r.get("unit"),
         })
     if not normalized:
