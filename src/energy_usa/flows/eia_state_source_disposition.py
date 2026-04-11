@@ -15,7 +15,7 @@ from prefect.logging import get_run_logger
 
 from energy_usa.config import Settings
 from energy_usa.db import get_connection, upsert_state_source_disposition
-from energy_usa.eia.manager import EIAManager
+from energy_usa.clients.eia import EIAManager
 from energy_usa.flows.date_range import make_run_name, resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
