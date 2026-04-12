@@ -38,6 +38,10 @@ make run FLOW=backfill-eia START=2020-01 END=2024-12
 # Local development
 make jupyter                         # Jupyter Lab (no Docker)
 
+# Code generation (from markdown specs)
+make generate-ingest SOURCE=eia                    # All EIA datasets
+make generate-ingest SOURCE=eia GDATASET=retail_sales  # Single dataset
+
 # Data export for analysis
 make export TABLE=eia.retail_sales OUT=exports/retail_sales.csv
 make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
@@ -86,6 +90,12 @@ EIA API → EIAClient → EIAManager → Prefect Flow → Postgres (eia.* schema
 - `flows/ingest/eia/` — Prefect flows; each dataset = one fetch task + one upsert task; discovered dynamically at deploy time
 - `flows/ingest/backfill.py` — Chunks date ranges and submits child flow runs via dynamic discovery
 - `config.py` — pydantic-settings loaded from `.env`
+- `generators/` — Development-time code generation from markdown specs
+  - `models.py` — Dataclasses (SourceSpec, DatasetSpec, ColumnSpec)
+  - `parse_spec.py` — Markdown parser for ingest specs
+  - `ingest.py` — Generates SQL, db modules, and flow modules
+  - `templates/` — Jinja2 templates for each output type
+- `specs/ingest/eia.md` — Source of truth for all EIA dataset configurations
 
 **`docker/postgres/init/`** — SQL run on first container start; source of truth for schemas
 - `init/ingest/eia/` — Table DDL for all EIA datasets under the `eia` schema
