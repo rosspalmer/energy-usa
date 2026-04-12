@@ -48,6 +48,10 @@ make validate VSOURCE=eia VDATASET=retail_sales    # Single dataset
 make audit VSOURCE=eia                             # View results summary
 make generate-validate VSOURCE=eia                 # Generate audit rules SQL
 
+# Transform (domain model builds)
+make transform DOMAIN=electricity                  # All electricity tables
+make transform DOMAIN=electricity TTABLE=retail_by_state  # Single table
+
 # Data export for analysis
 make export TABLE=eia.retail_sales OUT=exports/retail_sales.csv
 make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv

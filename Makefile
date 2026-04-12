@@ -16,13 +16,16 @@ SOURCE    ?= eia                    # Source for code generation
 GDATASET  ?=                        # Dataset for single-dataset generation (blank = all)
 VSOURCE   ?= eia                    # Source for validation
 VDATASET  ?=                        # Dataset for validation (blank = all)
+DOMAIN    ?= electricity            # Domain for transform
+TTABLE    ?=                        # Table for single-table transform (blank = all)
 
 .PHONY: help up down logs deploy \
         backfill backfill-prefect \
         jupyter \
         export \
         generate-ingest \
-        validate audit generate-validate
+        validate audit generate-validate \
+        transform
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -115,3 +118,10 @@ audit:  ## Show audit results summary. Use VSOURCE, VDATASET (optional).
 
 generate-validate:  ## Generate validate audit rules SQL from specs/validate/<VSOURCE>.md
 	uv run python scripts/generate.py validate --source $(VSOURCE)
+
+# ── Transform ─────────────────────────────────────────────────────────────────
+
+transform:  ## Run transform for a domain. Use DOMAIN, TTABLE (optional).
+	uv run python scripts/transform.py \
+	  --domain $(DOMAIN) \
+	  $(if $(TTABLE),--table $(TTABLE))

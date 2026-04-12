@@ -14,6 +14,21 @@ from energy_usa.generators.parse_spec import parse_spec
 from energy_usa.generators.ingest import generate_ingest
 
 
+def cmd_transform(args: argparse.Namespace) -> None:
+    spec_path = Path("specs/transform") / f"{args.domain}.md"
+    if not spec_path.exists():
+        print(f"ERROR: Spec file not found: {spec_path}")
+        sys.exit(1)
+    from energy_usa.generators.parse_transform import parse_transform_spec
+    spec = parse_transform_spec(spec_path.read_text())
+    print(f"Domain: {spec.domain}")
+    print(f"Tables ({len(spec.tables)}):")
+    for t in spec.tables:
+        sources = ", ".join(t.source_tables)
+        print(f"  {t.name}: {len(t.columns)} columns, grain={t.grain}, sources=[{sources}]")
+        print(f"    unique_key={t.unique_key}")
+
+
 def cmd_validate(args: argparse.Namespace) -> None:
     spec_path = Path("specs/validate") / f"{args.source}.md"
     if not spec_path.exists():
@@ -52,11 +67,16 @@ def main() -> None:
     validate_parser = sub.add_parser("validate", help="Generate validate audit rules SQL")
     validate_parser.add_argument("--source", required=True, help="Source name (e.g. eia)")
 
+    transform_parser = sub.add_parser("transform", help="Parse and validate transform spec")
+    transform_parser.add_argument("--domain", required=True, help="Domain name (e.g. electricity)")
+
     args = parser.parse_args()
     if args.command == "ingest":
         cmd_ingest(args)
     elif args.command == "validate":
         cmd_validate(args)
+    elif args.command == "transform":
+        cmd_transform(args)
 
 
 if __name__ == "__main__":
