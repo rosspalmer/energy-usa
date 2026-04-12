@@ -12,11 +12,14 @@ SERVICE   ?=                        # Service name for `make logs` (blank = all)
 TABLE     ?= eia.retail_sales       # Table for `make export` (schema.table format)
 FILTER    ?=                        # Optional SQL WHERE clause for `make export` (e.g. "stateid='CA'")
 OUT       ?= exports/$(TABLE).csv   # Output path for `make export`
+SOURCE    ?= eia                    # Source for code generation
+GDATASET  ?=                        # Dataset for single-dataset generation (blank = all)
 
 .PHONY: help up down logs deploy \
         backfill backfill-prefect \
         jupyter \
-        export
+        export \
+        generate-ingest
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -82,3 +85,15 @@ export:  ## Export a table to CSV. Use TABLE, FILTER (optional), OUT (optional).
 	  --table $(TABLE) \
 	  $(if $(FILTER),--filter '$(FILTER)') \
 	  --out $(OUT)
+
+# ── Code generation ───────────────────────────────────────────────────────────
+# Generate ingest artifacts (SQL, db module, flow) from markdown specs.
+#
+# Examples:
+#   make generate-ingest SOURCE=eia
+#   make generate-ingest SOURCE=eia GDATASET=retail_sales
+
+generate-ingest:  ## Generate ingest code from specs/ingest/<SOURCE>.md
+	uv run python scripts/generate.py ingest \
+	  --source $(SOURCE) \
+	  $(if $(GDATASET),--dataset $(GDATASET))
