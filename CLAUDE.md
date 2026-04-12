@@ -42,6 +42,12 @@ make jupyter                         # Jupyter Lab (no Docker)
 make generate-ingest SOURCE=eia                    # All EIA datasets
 make generate-ingest SOURCE=eia GDATASET=retail_sales  # Single dataset
 
+# Validation (data quality checks)
+make validate VSOURCE=eia                          # Run all EIA checks
+make validate VSOURCE=eia VDATASET=retail_sales    # Single dataset
+make audit VSOURCE=eia                             # View results summary
+make generate-validate VSOURCE=eia                 # Generate audit rules SQL
+
 # Data export for analysis
 make export TABLE=eia.retail_sales OUT=exports/retail_sales.csv
 make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv
