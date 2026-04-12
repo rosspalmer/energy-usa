@@ -63,6 +63,8 @@ DATASETS = [
     ("eia", "biomass_production"),
     ("eia", "aeo"),
     ("eia", "ieo"),
+    ("quality", "audit_rules"),
+    ("quality", "audit_results"),
 ]
 
 app = create_app()

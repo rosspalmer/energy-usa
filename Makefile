@@ -14,12 +14,15 @@ FILTER    ?=                        # Optional SQL WHERE clause for `make export
 OUT       ?= exports/$(TABLE).csv   # Output path for `make export`
 SOURCE    ?= eia                    # Source for code generation
 GDATASET  ?=                        # Dataset for single-dataset generation (blank = all)
+VSOURCE   ?= eia                    # Source for validation
+VDATASET  ?=                        # Dataset for validation (blank = all)
 
 .PHONY: help up down logs deploy \
         backfill backfill-prefect \
         jupyter \
         export \
-        generate-ingest
+        generate-ingest \
+        validate audit generate-validate
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -97,3 +100,18 @@ generate-ingest:  ## Generate ingest code from specs/ingest/<SOURCE>.md
 	uv run python scripts/generate.py ingest \
 	  --source $(SOURCE) \
 	  $(if $(GDATASET),--dataset $(GDATASET))
+
+# ── Validation ────────────────────────────────────────────────────────────────
+
+validate:  ## Run validation checks. Use VSOURCE, VDATASET (optional).
+	uv run python scripts/validate.py run \
+	  --source $(VSOURCE) \
+	  $(if $(VDATASET),--dataset $(VDATASET))
+
+audit:  ## Show audit results summary. Use VSOURCE, VDATASET (optional).
+	uv run python scripts/validate.py audit \
+	  --source $(VSOURCE) \
+	  $(if $(VDATASET),--dataset $(VDATASET))
+
+generate-validate:  ## Generate validate audit rules SQL from specs/validate/<VSOURCE>.md
+	uv run python scripts/generate.py validate --source $(VSOURCE)

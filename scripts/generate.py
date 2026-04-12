@@ -14,6 +14,20 @@ from energy_usa.generators.parse_spec import parse_spec
 from energy_usa.generators.ingest import generate_ingest
 
 
+def cmd_validate(args: argparse.Namespace) -> None:
+    spec_path = Path("specs/validate") / f"{args.source}.md"
+    if not spec_path.exists():
+        print(f"ERROR: Spec file not found: {spec_path}")
+        sys.exit(1)
+    from energy_usa.generators.parse_validate import parse_validate_spec
+    from energy_usa.generators.validate import generate_validate
+    spec = parse_validate_spec(spec_path.read_text())
+    generated = generate_validate(spec)
+    for path in generated:
+        print(f"  Generated: {path}")
+    print(f"\n{len(generated)} files generated")
+
+
 def cmd_ingest(args: argparse.Namespace) -> None:
     spec_path = Path("specs/ingest") / f"{args.source}.md"
     if not spec_path.exists():
@@ -35,9 +49,14 @@ def main() -> None:
     ingest_parser.add_argument("--source", required=True, help="Source name (e.g. eia)")
     ingest_parser.add_argument("--dataset", help="Single dataset name (optional)")
 
+    validate_parser = sub.add_parser("validate", help="Generate validate audit rules SQL")
+    validate_parser.add_argument("--source", required=True, help="Source name (e.g. eia)")
+
     args = parser.parse_args()
     if args.command == "ingest":
         cmd_ingest(args)
+    elif args.command == "validate":
+        cmd_validate(args)
 
 
 if __name__ == "__main__":
