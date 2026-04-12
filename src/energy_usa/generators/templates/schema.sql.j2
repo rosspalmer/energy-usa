@@ -1,0 +1,9 @@
+-- eia.{{ dataset.name }}: {{ dataset.frequency }} data.
+-- Unique on ({{ dataset.unique_key | join(', ') }}) for idempotent upserts.
+CREATE TABLE IF NOT EXISTS eia.{{ dataset.name }} (
+{% for col in dataset.columns %}
+    {{ col.name }} {{ col.pg_type }}{% if col.required %} NOT NULL{% endif %},
+{% endfor %}
+    ingested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY ({{ dataset.unique_key | join(', ') }})
+);

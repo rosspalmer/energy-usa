@@ -1,0 +1,62 @@
+"""Upsert eia.{{ dataset.name }} rows into Postgres.
+
+{{ dataset.frequency | capitalize }} data. Unique key: ({{ dataset.unique_key | join(', ') }}).
+"""
+from typing import Any
+
+import psycopg
+
+{% if dataset.data_columns %}
+from energy_usa.db.period import normalize_period, safe_numeric
+{% else %}
+from energy_usa.db.period import normalize_period
+{% endif %}
+
+
+def upsert_{{ dataset.name }}(conn: psycopg.Connection, rows: list[dict[str, Any]]) -> int:
+    """Upsert eia.{{ dataset.name }} rows.
+
+    :param conn: Open psycopg connection.
+    :param rows: List of dicts with EIA {{ dataset.name }} keys.
+    :returns: Number of rows upserted.
+    """
+    if not rows:
+        return 0
+    sql = """
+    INSERT INTO eia.{{ dataset.name }}
+        ({{ dataset.columns | map(attribute='name') | list | join(', ') }}, ingested_at)
+    VALUES
+        ({{ dataset.columns | map(attribute='name') | list | fmt_params }}, now())
+    ON CONFLICT ({{ dataset.unique_key | join(', ') }})
+    DO UPDATE SET
+{% for col in dataset.non_key_columns %}
+        {{ col.name }} = EXCLUDED.{{ col.name }},
+{% endfor %}
+        ingested_at = now()
+    """
+    normalized = []
+    for r in rows:
+        period_date = normalize_period(r.get("period"), "{{ dataset.period_type }}")
+        if period_date is None:
+            continue
+{% for f in dataset.filters %}
+        if r.get("{{ f.field }}") == "{{ f.value }}":
+            continue
+{% endfor %}
+        normalized.append({
+            "period": period_date,
+{% for col in dataset.columns %}
+{% if col.name == "period" %}
+{% elif col.all_api_fields | length > 1 or col.default %}
+            "{{ col.name }}": {% if col.is_numeric %}safe_numeric({% endif %}{{ col.all_api_fields | map("fmt_get") | join(" or ") }}{% if col.default %} or "{{ col.default }}"{% endif %}{% if col.is_numeric %}){% endif %},
+{% else %}
+            "{{ col.name }}": {% if col.is_numeric %}safe_numeric({% endif %}r.get("{{ col.api_field }}"){% if col.is_numeric %}){% endif %},
+{% endif %}
+{% endfor %}
+        })
+    if not normalized:
+        return 0
+    with conn.cursor() as cur:
+        cur.executemany(sql, normalized)
+    conn.commit()
+    return len(normalized)
