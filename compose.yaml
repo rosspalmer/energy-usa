@@ -46,6 +46,7 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
       EIA_API_KEY: ${EIA_API_KEY}
       INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
+      TRANSFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/transform
       # Store flow results on a persistent volume instead of the ephemeral container layer.
       PREFECT_LOCAL_STORAGE_PATH: /prefect-results
     volumes:
@@ -65,6 +66,7 @@ services:
     env_file: .env
     environment:
       INGEST_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/ingest
+      TRANSFORM_DATABASE_URL: postgresql://${POSTGRES_USER:-energy}:${POSTGRES_PASSWORD:-energy}@postgres:5432/transform
     volumes:
       - ./notebooks:/app/notebooks
     ports:

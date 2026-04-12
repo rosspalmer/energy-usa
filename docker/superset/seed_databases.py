@@ -22,6 +22,11 @@ CONNECTIONS = [
         "uri": f"{_uri}/ingest",
         "description": "EIA API raw data — retail sales, power generation, state summary, source disposition",
     },
+    {
+        "name": "Transform",
+        "uri": f"{_uri}/transform",
+        "description": "Domain models — electricity, fossil fuels, emissions, pricing",
+    },
 ]
 
 # All EIA ingest tables — in the "eia" schema (schema.table format).
@@ -67,6 +72,11 @@ DATASETS = [
     ("quality", "audit_results"),
 ]
 
+TRANSFORM_DATASETS = [
+    ("electricity", "generation_mix"),
+    ("electricity", "retail_by_state"),
+]
+
 app = create_app()
 with app.app_context():
     from superset.models.core import Database
@@ -109,5 +119,26 @@ with app.app_context():
         else:
             print(f"  Already exists:   {schema}.{table_name}")
     db.session.commit()
+
+    # --- Seed transform datasets ---
+    transform_db = db.session.query(Database).filter_by(database_name="Transform").first()
+    if transform_db:
+        for schema, table_name in TRANSFORM_DATASETS:
+            existing_dataset = (
+                db.session.query(SqlaTable)
+                .filter_by(database_id=transform_db.id, schema=schema, table_name=table_name)
+                .first()
+            )
+            if not existing_dataset:
+                dataset = SqlaTable(
+                    database_id=transform_db.id,
+                    schema=schema,
+                    table_name=table_name,
+                )
+                db.session.add(dataset)
+                print(f"  Added dataset:    {schema}.{table_name}")
+            else:
+                print(f"  Already exists:   {schema}.{table_name}")
+        db.session.commit()
 
 print("Database and dataset seeding complete.")
