@@ -104,6 +104,7 @@ services:
     volumes:
       - ./docker/superset/superset_config.py:/app/pythonpath/superset_config.py:ro
       - ./docker/superset/seed_databases.py:/app/pythonpath/seed_databases.py:ro
+      - ./docker/superset/saved_queries.py:/app/pythonpath/saved_queries.py:ro
       - ./docker/superset/init.sh:/app/init.sh:ro
     command: ["bash", "/app/init.sh"]
     depends_on:

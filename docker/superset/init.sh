@@ -40,4 +40,7 @@ superset init
 echo "==> Seeding database connections..."
 python /app/pythonpath/seed_databases.py
 
+echo "==> Seeding saved queries..."
+python /app/pythonpath/saved_queries.py
+
 echo "==> Superset initialisation complete."
