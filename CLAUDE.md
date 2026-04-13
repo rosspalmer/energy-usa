@@ -52,6 +52,11 @@ make generate-validate VSOURCE=eia                 # Generate audit rules SQL
 make transform DOMAIN=electricity                  # All electricity tables
 make transform DOMAIN=electricity TTABLE=retail_by_state  # Single table
 
+# Dashboards (Superset management)
+make dashboard-list                                # List dashboards
+make dashboard-export                              # Export to docker/superset/dashboards/
+make dashboard-import                              # Import from exported files
+
 # Data export for analysis
 make export TABLE=eia.retail_sales OUT=exports/retail_sales.csv
 make export TABLE=eia.retail_sales FILTER="stateid='CA'" OUT=exports/ca_retail.csv

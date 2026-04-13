@@ -25,7 +25,8 @@ TTABLE    ?=                        # Table for single-table transform (blank = 
         export \
         generate-ingest \
         validate audit generate-validate \
-        transform
+        transform \
+        dashboard-list dashboard-export dashboard-import
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -125,3 +126,14 @@ transform:  ## Run transform for a domain. Use DOMAIN, TTABLE (optional).
 	uv run python scripts/transform.py \
 	  --domain $(DOMAIN) \
 	  $(if $(TTABLE),--table $(TTABLE))
+
+# ── Dashboards ────────────────────────────────────────────────────────────────
+
+dashboard-list:  ## List Superset dashboards
+	uv run python scripts/dashboards.py list
+
+dashboard-export:  ## Export dashboards to docker/superset/dashboards/
+	uv run python scripts/dashboards.py export
+
+dashboard-import:  ## Import dashboards from docker/superset/dashboards/
+	uv run python scripts/dashboards.py import
