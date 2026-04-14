@@ -588,8 +588,13 @@
   |--------|-----------|------|----------|---------|
   | period | period | DATE | yes | |
   | stateid | stateid; state | TEXT | yes | |
+  | total_net_generation | total-net-generation; total_net_generation | NUMERIC | no | |
+  | total_international_imports | total-international-imports; total_international_imports | NUMERIC | no | |
+  | total_international_exports | total-international-exports; total_international_exports | NUMERIC | no | |
   | net_interstate_trade | net-interstate-trade; net_interstate_trade | NUMERIC | no | |
+  | total_supply | total-supply; total_supply | NUMERIC | no | |
   | total_disposition | total-disposition; total_disposition | NUMERIC | no | |
+  | estimated_losses | estimated-losses; estimated_losses | NUMERIC | no | |
 - **History**: 2001-01
 
 ### state_summary
