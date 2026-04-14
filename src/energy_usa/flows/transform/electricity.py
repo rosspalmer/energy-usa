@@ -10,6 +10,7 @@ from energy_usa.config import Settings
 from energy_usa.db.connection import get_connection
 from energy_usa.db.transform.electricity.generation_mix import query_generation_mix, upsert_generation_mix
 from energy_usa.db.transform.electricity.retail_by_state import query_retail_by_state, upsert_retail_by_state
+from energy_usa.db.transform.electricity.state_monthly_balance import query_state_monthly_balance, upsert_state_monthly_balance
 
 
 @task(name="transform-generation-mix")
@@ -48,6 +49,24 @@ def transform_retail_by_state_task(ingest_url: str, transform_url: str) -> int:
         transform_conn.close()
 
 
+@task(name="transform-state-monthly-balance")
+def transform_state_monthly_balance_task(ingest_url: str, transform_url: str) -> int:
+    logger = get_run_logger()
+    ingest_conn = get_connection(ingest_url)
+    try:
+        rows = query_state_monthly_balance(ingest_conn)
+        logger.info("Queried %d state_monthly_balance rows from ingest", len(rows))
+    finally:
+        ingest_conn.close()
+    transform_conn = get_connection(transform_url)
+    try:
+        count = upsert_state_monthly_balance(transform_conn, rows)
+        logger.info("Upserted %d rows into electricity.state_monthly_balance", count)
+        return count
+    finally:
+        transform_conn.close()
+
+
 @flow(name="transform-electricity", timeout_seconds=3600)
 def transform_electricity(tables: list[str] | None = None) -> dict[str, int]:
     logger = get_run_logger()
@@ -60,6 +79,7 @@ def transform_electricity(tables: list[str] | None = None) -> dict[str, int]:
     all_tables = {
         "generation_mix": transform_generation_mix_task,
         "retail_by_state": transform_retail_by_state_task,
+        "state_monthly_balance": transform_state_monthly_balance_task,
     }
     targets = all_tables if not tables else {k: v for k, v in all_tables.items() if k in tables}
 
