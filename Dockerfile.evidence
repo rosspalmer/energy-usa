@@ -2,7 +2,10 @@
 # The image is intentionally thin: node_modules are installed once at build
 # time, then the project source is bind-mounted in compose so edits on the
 # host hot-reload inside the container.
-FROM node:20-alpine
+#
+# Debian slim (glibc) rather than alpine (musl): Evidence's postgres source
+# plugin pulls in native modules that segfault on musl at load time.
+FROM node:20-slim
 
 WORKDIR /app
 
@@ -10,7 +13,8 @@ WORKDIR /app
 # works around an upstream ERESOLVE between Evidence's typescript peer and
 # svelte2tsx (known Evidence issue as of v40.x).
 COPY evidence/package.json evidence/package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps \
+    && npm rebuild
 
 # Seed the rest of the project so first-run before the bind mount works.
 COPY evidence/ ./

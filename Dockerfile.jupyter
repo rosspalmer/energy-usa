@@ -1,13 +1,13 @@
-# Jupyter notebooks: project deps (base + web + notebook), run JupyterLab.
+# Jupyter notebooks: project deps (base + notebook), run JupyterLab.
 # Use python:3.12-slim and install uv via pip to avoid pulling from ghcr.io (helps with proxy/firewall).
 FROM python:3.12-slim AS builder
 RUN pip install --no-cache-dir uv
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project --extra web --extra notebook
+RUN uv sync --frozen --no-dev --no-install-project --extra notebook
 COPY . .
-RUN uv sync --frozen --no-dev --extra web --extra notebook
+RUN uv sync --frozen --no-dev --extra notebook
 
 FROM python:3.12-slim
 WORKDIR /app

@@ -1,9 +1,9 @@
 name: transform_db
 type: postgres
 options:
-  host: $POSTGRES_HOST
-  port: $POSTGRES_PORT
-  database: $POSTGRES_DATABASE
-  user: $POSTGRES_USER
-  password: $POSTGRES_PASSWORD
+  host: postgres
+  port: 5432
+  database: transform
+  user: energy
+  password: energy
   ssl: false
