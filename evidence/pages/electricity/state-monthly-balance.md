@@ -23,13 +23,13 @@ and headline number updates in place.
 
 ```sql states
 select distinct state
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 order by state
 ```
 
 ```sql latest
 select *
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
 order by period desc
 limit 1
@@ -87,7 +87,7 @@ select
   gen_geothermal_mwh    as geothermal,
   gen_biomass_mwh       as biomass,
   gen_petroleum_mwh     as petroleum
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
   and period between '${inputs.range.start}' and '${inputs.range.end}'
 order by period
@@ -130,7 +130,7 @@ with ranked as (
     end as top_fuel,
     round(100.0 * gen_renewable_mwh / nullif(gen_total_mwh, 0), 1) as renewable_share,
     period
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
   order by period desc
   limit 1
@@ -152,7 +152,7 @@ select
   gen_fossil_mwh    as fossil,
   gen_renewable_mwh as renewable,
   gen_nuclear_mwh   as nuclear
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
   and period between '${inputs.range.start}' and '${inputs.range.end}'
 order by period
@@ -170,14 +170,14 @@ order by period
 ```sql rollup_summary
 with latest as (
   select *
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
   order by period desc
   limit 1
 ),
 yoy as (
   select gen_renewable_mwh
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
     and period = (select period - interval '1 year' from latest)
 )
@@ -207,7 +207,7 @@ select
   international_imports_mwh     as intl_imports,
   international_exports_mwh     as intl_exports,
   net_interstate_trade_mwh      as net_interstate
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
   and period between '${inputs.range.start}' and '${inputs.range.end}'
 order by period
@@ -224,7 +224,7 @@ order by period
 ```sql trade_summary
 with latest as (
   select *
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
   order by period desc
   limit 1
@@ -257,7 +257,7 @@ select
   consumption_industrial_mwh     as industrial,
   consumption_transportation_mwh as transportation,
   consumption_other_mwh          as other
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
   and period between '${inputs.range.start}' and '${inputs.range.end}'
 order by period
@@ -275,7 +275,7 @@ order by period
 ```sql consumption_summary
 with latest as (
   select *
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
   order by period desc
   limit 1
@@ -318,7 +318,7 @@ select
     - coalesce(international_exports_mwh, 0)) as supply_side,
   (coalesce(consumption_total_mwh, 0)
     + coalesce(estimated_losses_mwh, 0))       as demand_side
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
   and period between '${inputs.range.start}' and '${inputs.range.end}'
 order by period
@@ -348,7 +348,7 @@ from (
       - coalesce(international_exports_mwh, 0)) as supply_side,
     (coalesce(consumption_total_mwh, 0)
       + coalesce(estimated_losses_mwh, 0))       as demand_side
-  from electricity.state_monthly_balance
+  from transform_db.state_monthly_balance
   where state = '${inputs.state.value}'
     and period between '${inputs.range.start}' and '${inputs.range.end}'
 ) b
@@ -374,10 +374,10 @@ select
   net_interstate_trade_mwh as net_trade,
   consumption_total_mwh    as consumption,
   estimated_losses_mwh     as losses
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
 order by period desc
 limit 24
 ```
 
-<DataTable data={recent} search=true sort=true/>
+<DataTable data={recent} search=true sort="period desc"/>

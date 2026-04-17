@@ -54,18 +54,37 @@ filter controls. Their values are available everywhere on the page via
 ```
 
 **SQL queries.** Fenced SQL blocks with a name become named data sources.
-They run against the configured `transform_db` Postgres source. Inject
-input values with `${inputs.x.value}`:
+They run against DuckDB (in-browser), **not directly against Postgres**.
+DuckDB can only see Postgres tables that have been materialized as parquet
+by a source-level query. Two-step flow:
+
+1. Write a source query at `evidence/sources/transform_db/queries/<name>.sql`
+   that reads from the real Postgres table.
+2. Reference it from the page as `transform_db.<name>`.
+
+Source query (`evidence/sources/transform_db/queries/state_monthly_balance.sql`):
+
+```sql
+select *
+from electricity.state_monthly_balance
+```
+
+Page inline query — note the `transform_db.` prefix:
 
 ````markdown
 ```sql latest
 select *
-from electricity.state_monthly_balance
+from transform_db.state_monthly_balance
 where state = '${inputs.state.value}'
 order by period desc
 limit 1
 ```
 ````
+
+Inject input values with `${inputs.x.value}`. Source queries are materialized
+whenever you run `npm run sources` inside the container (or restart the
+service); changes to source SQL require a re-run, changes to inline page SQL
+hot-reload.
 
 **Templated prose.** Query results are JavaScript-accessible. Interpolate
 scalar values into text with `{query_name[0].column_name}`:
@@ -85,8 +104,11 @@ columns to plot:
 **Tables.** `<DataTable>` renders a sortable, searchable grid:
 
 ```markdown
-<DataTable data={recent} search=true sort=true/>
+<DataTable data={recent} search=true sort="period desc"/>
 ```
+
+Column headers are click-to-sort by default; the `sort` attribute takes a
+column name (not a boolean) to set the initial sort order.
 
 Everything on the page re-runs when any input changes. If you change the
 state dropdown, all queries that reference `${inputs.state.value}`
