@@ -302,3 +302,59 @@ from latest, top_sector
 Of the **{consumption_summary[0].total_mwh}** MWh consumed in the most
 recent month, the largest sector was **{consumption_summary[0].top_sector}**
 at **{consumption_summary[0].top_sector_share}%** of the total.
+
+## Balance check
+
+A sanity check on the underlying EIA data. Supply side is generation plus
+net imports; demand side is retail consumption plus estimated losses. They
+should roughly match.
+
+```sql balance
+select
+  period,
+  (gen_total_mwh
+    + coalesce(net_interstate_trade_mwh, 0)
+    + coalesce(international_imports_mwh, 0)
+    - coalesce(international_exports_mwh, 0)) as supply_side,
+  (coalesce(consumption_total_mwh, 0)
+    + coalesce(estimated_losses_mwh, 0))       as demand_side
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+  and period between '${inputs.range.start}' and '${inputs.range.end}'
+order by period
+```
+
+<LineChart
+  data={balance}
+  x=period
+  y={["supply_side","demand_side"]}
+  yFmt="#,##0"
+  title="Supply vs demand side (MWh)"
+/>
+
+```sql balance_summary
+select
+  round(
+    avg(
+      100.0 * abs(supply_side - demand_side) / nullif((supply_side + demand_side) / 2.0, 0)
+    ),
+    2
+  ) as residual_pct
+from (
+  select
+    (gen_total_mwh
+      + coalesce(net_interstate_trade_mwh, 0)
+      + coalesce(international_imports_mwh, 0)
+      - coalesce(international_exports_mwh, 0)) as supply_side,
+    (coalesce(consumption_total_mwh, 0)
+      + coalesce(estimated_losses_mwh, 0))       as demand_side
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+    and period between '${inputs.range.start}' and '${inputs.range.end}'
+) b
+```
+
+Supply and demand match to within **{balance_summary[0].residual_pct}%** on
+average across the selected date range. Residuals come from rounding,
+reporting lag, and consumption categories not captured in retail sales
+(e.g. behind-the-meter generation for own-use).
