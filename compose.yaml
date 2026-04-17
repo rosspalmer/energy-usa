@@ -134,6 +134,26 @@ services:
       superset-init:
         condition: service_completed_successfully
 
+  evidence:
+    build:
+      context: .
+      dockerfile: Dockerfile.evidence
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: transform
+      POSTGRES_USER: ${POSTGRES_USER:-energy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-energy}
+    volumes:
+      - ./evidence:/app
+      - evidence_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data: {}
   prefect_results: {}
+  evidence_node_modules: {}
