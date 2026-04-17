@@ -193,3 +193,52 @@ Fossil fuels currently supply **{rollup_summary[0].fossil_share}%** of
 generation, renewables **{rollup_summary[0].renewable_share}%**, and nuclear
 **{rollup_summary[0].nuclear_share}%**. Renewable output is
 **{rollup_summary[0].renewable_yoy_pct}%** year-over-year.
+
+## Supply & trade
+
+Where the state's electricity comes from when generation alone doesn't
+balance demand. International imports and exports are typically small;
+interstate trade is usually the bigger lever.
+
+```sql supply_trade
+select
+  period,
+  total_supply_mwh              as total_supply,
+  international_imports_mwh     as intl_imports,
+  international_exports_mwh     as intl_exports,
+  net_interstate_trade_mwh      as net_interstate
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+  and period between '${inputs.range.start}' and '${inputs.range.end}'
+order by period
+```
+
+<LineChart
+  data={supply_trade}
+  x=period
+  y={["total_supply","intl_imports","intl_exports","net_interstate"]}
+  yFmt="#,##0"
+  title="Supply and trade (MWh)"
+/>
+
+```sql trade_summary
+with latest as (
+  select *
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+  order by period desc
+  limit 1
+)
+select
+  case when net_interstate_trade_mwh < 0 then 'importer' else 'exporter' end as direction,
+  abs(net_interstate_trade_mwh) as net_interstate_abs,
+  international_imports_mwh      as intl_imports,
+  international_exports_mwh      as intl_exports
+from latest
+```
+
+In the most recent month, **{inputs.state.value}** was a net
+**{trade_summary[0].direction}** of
+**{trade_summary[0].net_interstate_abs}** MWh across state lines.
+International trade totaled **{trade_summary[0].intl_imports}** MWh of
+imports and **{trade_summary[0].intl_exports}** MWh of exports.
