@@ -27,12 +27,17 @@ that breaks down the components and totals of
    — text narrative interleaved with SQL-driven charts and templated values.
 4. Document the workflow clearly enough that a non-technical user can follow
    along and add their own report.
+5. Produce a shareable artifact — the static site built by Evidence — that
+   can be copied to any static host or delivered directly.
 
 ## Non-goals
 
 - Replacing Superset. The two tools coexist with distinct roles.
-- Publishing the built static site anywhere. `make evidence-build` exists as
-  an entry point but deployment is deferred.
+- Hosting the shared artifact for you. We produce and optionally sync the
+  bundle to a destination directory, but we do not manage the static host
+  itself (S3 bucket provisioning, DNS, TLS, etc.).
+- Per-page PDF export. Evidence's build output is a full SPA; extracting
+  individual pages as standalone HTML or PDF is a separate exercise.
 - Authentication. The Evidence dev server has no built-in auth; we treat it
   as an internal dev tool only.
 - Code generation from a separate spec file. Evidence pages are markdown
@@ -159,6 +164,14 @@ No new `.env.example` entries are required; Evidence reuses the existing
   (`docker compose up -d postgres evidence`).
 - `make evidence-build` — run the build step inside the container to produce
   `evidence/build/`.
+- `make evidence-publish DEST=<path>` — rsync the latest
+  `evidence/build/` output to a destination directory for sharing. Default
+  `DEST` is `exports/evidence-build/` (project-local). Users who want remote
+  hosting point `DEST` at a mounted bucket / sync target or run the
+  appropriate upload command themselves afterward. If `DEST` starts with
+  `s3://`, the target shells out to `aws s3 sync` instead of `rsync`. The
+  target runs `make evidence-build` first if `evidence/build/` is missing or
+  stale.
 - `make evidence-logs` — tail the evidence container logs.
 
 `make help` is updated to include these.
@@ -215,7 +228,12 @@ Sections:
    `{query[0].col}` interpolation.
 5. Adding a new report — copy the example, edit queries, add sections.
 6. Filters and reactive values — how inputs drive queries and text.
-7. Troubleshooting — UI query errors, Postgres connection failures, hot
+7. Sharing a report — walk through `make evidence-build` and
+   `make evidence-publish DEST=…`, with concrete examples for a local
+   directory and for `s3://` destinations. Note that the bundle is a full
+   static site: share by handing over the directory, zipping it, or
+   pointing a static host at it.
+8. Troubleshooting — UI query errors, Postgres connection failures, hot
    reload issues.
 
 Updates to existing docs:
@@ -240,6 +258,12 @@ No automated tests — Evidence is a static-site frontend. Manual checks:
    triggers a hot reload in the browser within a few seconds.
 6. `make evidence-build` completes successfully and writes
    `evidence/build/index.html`.
+7. `make evidence-publish DEST=/tmp/evidence-share` syncs the build output
+   to that directory and reports the path; opening
+   `file:///tmp/evidence-share/index.html` renders the same report.
+8. `make evidence-publish DEST=s3://<bucket>/path/` (with valid AWS creds)
+   invokes `aws s3 sync` against the build directory. _(Verified only if an
+   S3 target is available during implementation.)_
 
 ## Risks & open questions
 
@@ -251,6 +275,12 @@ No automated tests — Evidence is a static-site frontend. Manual checks:
   `/app/node_modules`. We work around this with a named volume
   (`evidence_node_modules`) mounted on top. Standard Node-in-Docker pattern
   but worth documenting in `docs/evidence.md`.
-- **Deployment.** Out of scope for this spec but will need a follow-up —
-  likely `make evidence-build` + serving `evidence/build/` from a static
-  host, or a separate compose file for the Proxmox `energy-app` container.
+- **Deployment host.** `make evidence-publish` produces a shareable bundle
+  but does not provision or manage the host. The obvious choices — an S3
+  bucket with public read, a directory served by nginx on the Proxmox
+  `energy-app` container, or a static site host like Netlify — are each a
+  small follow-up. Pick one when the first real audience exists.
+- **`aws` CLI dependency for S3 targets.** When `DEST` starts with `s3://`,
+  `make evidence-publish` shells out to `aws s3 sync`. The target fails
+  with a clear error if the CLI or credentials are missing rather than
+  silently producing nothing.
