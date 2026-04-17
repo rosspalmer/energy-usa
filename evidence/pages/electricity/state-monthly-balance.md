@@ -141,3 +141,55 @@ select * from ranked
 In the most recent month, the largest single fuel source in
 **{inputs.state.value}** was **{gen_mix_summary[0].top_fuel}**. Renewables
 supplied **{gen_mix_summary[0].renewable_share}%** of generation.
+
+## Fossil vs renewable vs nuclear
+
+A simpler view of the same data grouped into three derived rollups.
+
+```sql gen_rollup
+select
+  period,
+  gen_fossil_mwh    as fossil,
+  gen_renewable_mwh as renewable,
+  gen_nuclear_mwh   as nuclear
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+  and period between '${inputs.range.start}' and '${inputs.range.end}'
+order by period
+```
+
+<AreaChart
+  data={gen_rollup}
+  x=period
+  y={["fossil","renewable","nuclear"]}
+  type=stacked
+  yFmt="#,##0"
+  title="Generation rollup"
+/>
+
+```sql rollup_summary
+with latest as (
+  select *
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+  order by period desc
+  limit 1
+),
+yoy as (
+  select gen_renewable_mwh
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+    and period = (select period - interval '1 year' from latest)
+)
+select
+  round(100.0 * latest.gen_fossil_mwh    / nullif(latest.gen_total_mwh,0), 1) as fossil_share,
+  round(100.0 * latest.gen_renewable_mwh / nullif(latest.gen_total_mwh,0), 1) as renewable_share,
+  round(100.0 * latest.gen_nuclear_mwh   / nullif(latest.gen_total_mwh,0), 1) as nuclear_share,
+  round(100.0 * (latest.gen_renewable_mwh - yoy.gen_renewable_mwh) / nullif(yoy.gen_renewable_mwh, 0), 1) as renewable_yoy_pct
+from latest, yoy
+```
+
+Fossil fuels currently supply **{rollup_summary[0].fossil_share}%** of
+generation, renewables **{rollup_summary[0].renewable_share}%**, and nuclear
+**{rollup_summary[0].nuclear_share}%**. Renewable output is
+**{rollup_summary[0].renewable_yoy_pct}%** year-over-year.
