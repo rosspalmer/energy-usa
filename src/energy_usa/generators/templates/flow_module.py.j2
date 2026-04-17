@@ -9,7 +9,10 @@ from energy_usa.config import Settings
 from energy_usa.db.connection import get_connection
 from energy_usa.db.ingest.eia.{{ dataset.name }} import upsert_{{ dataset.name }}
 from energy_usa.clients.eia import EIAManager
-from energy_usa.flows.date_range import make_run_name, resolve_date_range
+from energy_usa.flows.date_range import resolve_date_range
+
+# Cadence label exposed for backfill chunking and run naming.
+CADENCE = "{{ dataset.frequency }}"
 
 EIA_PAGE_LENGTH = 5000
 {% if dataset.data_columns %}
@@ -125,13 +128,10 @@ def upsert_{{ dataset.name }}_task(
         conn.close()
 
 
-def _run_name(**kwargs):
-    return make_run_name("{{ dataset.frequency }}", kwargs.get("date_start"), kwargs.get("date_end"))
-
-
 @flow(
     name="ingest-eia-{{ dataset.name | replace('_', '-') }}",
-    flow_run_name=_run_name,
+    # Prefect substitutes {date_start}/{date_end} with runtime values.
+    flow_run_name="{date_start} - {date_end}: {{ dataset.frequency }}",
     retries=2,
     retry_delay_seconds=60,
     timeout_seconds=1800,
@@ -171,6 +171,13 @@ async def ingest_eia_{{ dataset.name }}(
     )
     total = upsert_{{ dataset.name }}_task(settings.ingest_database_url, data)
     if total == 0:
-        raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
+        # Trailing months may not be published yet — log and return 0 rather
+        # than raise. Raising would trigger Prefect retries (creating duplicate
+        # runs in the UI) for an expected, transient condition.
+        logger.warning(
+            "No data returned for %s→%s — EIA may not have published yet",
+            start, end,
+        )
+        return 0
     logger.info("Ingest complete: total rows upserted=%s", total)
     return total

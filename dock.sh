@@ -91,10 +91,12 @@ cmd_deploy() {
 }
 
 cmd_run() {
-  local flow="${1:-ingest-eia-electricity-all}"
-  # deployment name and flow name match in our deploy script
-  echo "Triggering deployment run: $flow/$flow"
-  PREFECT_API_URL="$PREFECT_API_URL" prefect deployment run "$flow/$flow"
+  local flow="${1:?Usage: $0 run <flow> [--param key=value ...]}"
+  shift
+  # deployment name and flow name match in our deploy script.
+  # Forward any remaining args (e.g. --param date_start=2020-01) to the prefect CLI.
+  echo "Triggering deployment run: $flow/$flow $*"
+  PREFECT_API_URL="$PREFECT_API_URL" prefect deployment run "$flow/$flow" "$@"
 }
 
 cmd_cancel() {
@@ -116,17 +118,19 @@ cmd_ensure_ingest_db() {
   '
 }
 
-case "${1:-}" in
-  up)        cmd_up "$2" ;;
+subcommand="${1:-}"
+shift || true
+case "$subcommand" in
+  up)        cmd_up "$@" ;;
   down)      cmd_down ;;
   restart)   cmd_restart ;;
-  logs)     cmd_logs "$2" ;;
+  logs)     cmd_logs "$@" ;;
   ps)       cmd_ps ;;
   worker-pool) cmd_worker_pool ;;
   deploy)   cmd_deploy ;;
-  run)      cmd_run "$2" ;;
-  cancel)   cmd_cancel "$2" ;;
+  run)      cmd_run "$@" ;;
+  cancel)   cmd_cancel "$@" ;;
   ensure-ingest-db) cmd_ensure_ingest_db ;;
   -h|--help|help|"") usage ;;
-  *)        echo "Unknown command: $1"; usage; exit 1 ;;
+  *)        echo "Unknown command: $subcommand"; usage; exit 1 ;;
 esac

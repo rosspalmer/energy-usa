@@ -21,10 +21,10 @@ from pathlib import Path
 
 
 INGEST_TABLES = {
-    "eia_retail_sales",
-    "eia_electric_power_operational",
-    "eia_state_source_disposition",
-    "eia_state_summary",
+    "eia.retail_sales",
+    "eia.electric_power_operational",
+    "eia.state_source_disposition",
+    "eia.state_summary",
 }
 
 

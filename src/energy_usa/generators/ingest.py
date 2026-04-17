@@ -137,7 +137,7 @@ def generate_ingest(
     if output_dir is None:
         # Default: repo root = 4 levels up from this file
         # .../src/energy_usa/generators/ingest.py → repo root
-        output_dir = Path(__file__).parent.parent.parent.parent.parent
+        output_dir = Path(__file__).parent.parent.parent.parent
 
     env = _make_jinja_env()
     sql_tmpl = env.get_template("schema.sql.j2")

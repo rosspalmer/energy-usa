@@ -7,7 +7,6 @@
 DATASET   ?= retail_sales           # Dataset for backfill: retail_sales | electric_power_operational | state_source_disposition | state_summary | all
 START     ?=                        # Start period YYYY-MM (blank = last calendar month)
 END       ?=                        # End period YYYY-MM (blank = current month)
-CHUNKS    ?= 1                      # Months per backfill chunk
 SERVICE   ?=                        # Service name for `make logs` (blank = all)
 TABLE     ?= eia.retail_sales       # Table for `make export` (schema.table format)
 FILTER    ?=                        # Optional SQL WHERE clause for `make export` (e.g. "stateid='CA'")
@@ -20,7 +19,7 @@ DOMAIN    ?= electricity            # Domain for transform
 TTABLE    ?=                        # Table for single-table transform (blank = all)
 
 .PHONY: help up down logs deploy \
-        backfill backfill-prefect \
+        backfill \
         jupyter \
         export \
         generate-ingest \
@@ -49,28 +48,21 @@ logs:  ## Tail logs (SERVICE=web|prefect-worker|jupyter|postgres|...)
 deploy:  ## Register Prefect ingest deployments (run after `make up`)
 	./dock.sh deploy
 
-# ── Ingest — local (no Prefect server required) ───────────────────────────────
-# This is the fastest way to build a historical dataset.
-# Full Python tracebacks appear in the terminal.
+# ── Ingest — via Prefect (requires `make up` and `make deploy` first) ────────
+# All ingest runs go through the Prefect server. The worker has the right env
+# (Postgres connection, EIA_API_KEY) and uses the Postgres-backed Prefect state
+# store, which handles concurrent child flow runs reliably. Chunk size is
+# derived from each dataset's cadence (annual=12mo, quarterly=3mo, etc.); see
+# CHUNK_MONTHS_BY_CADENCE in src/energy_usa/flows/ingest/backfill.py.
 #
 # Examples:
 #   make backfill DATASET=retail_sales START=2020-01 END=2024-12
-#   make backfill DATASET=all START=2015-01 END=2024-12 CHUNKS=6
+#   make backfill DATASET=all START=2020-01 END=2026-04
 
-backfill:  ## Run ingest locally (no Prefect server). Use DATASET, START, END, CHUNKS.
-	uv run python scripts/run_local.py \
-	  --dataset $(DATASET) \
-	  $(if $(START),--start $(START)) \
-	  $(if $(END),--end $(END)) \
-	  --chunks $(CHUNKS)
-
-# ── Ingest — via Prefect (requires `make up` first) ───────────────────────────
-
-backfill-prefect:  ## Trigger a backfill through the Prefect server. Use DATASET, START, END.
+backfill:  ## Trigger a backfill through Prefect. Use DATASET, START, END.
 	./dock.sh run backfill-eia \
 	  $(if $(START),--param date_start=$(START)) \
 	  $(if $(END),--param date_end=$(END)) \
-	  --param chunk_months=$(CHUNKS) \
 	  --param dataset=$(DATASET)
 
 # ── Local services (no Docker) ────────────────────────────────────────────────

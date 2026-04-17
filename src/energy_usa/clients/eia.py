@@ -253,14 +253,22 @@ class EIAManager:
     async def _with_retry(self, coro_factory: Any) -> Any:
         """Run a coroutine produced by the factory with retries and concurrency limit.
 
-        The semaphore ensures at most ``max_concurrent`` requests run at once. On :exc:`httpx.HTTPStatusError` (5xx only),
-        :exc:`httpx.TimeoutException`, or :exc:`httpx.ConnectError`, the call is
-        retried after an exponential backoff (1s, 2s, 4s, ...) up to :attr:`_max_retries`
-        attempts. Client errors (4xx) are not retried and are re-raised immediately.
+        The semaphore ensures at most ``max_concurrent`` requests run at once.
+        Retries with exponential backoff on:
+
+        * :exc:`httpx.TimeoutException` and :exc:`httpx.ConnectError` (transient
+          network conditions),
+        * :exc:`httpx.HTTPStatusError` with status >= 500 (server-side
+          failures),
+        * :exc:`httpx.HTTPStatusError` with status 429 (rate-limited; the API
+          is asking us to slow down — uses a longer backoff).
+
+        Other 4xx errors are not retried and are re-raised immediately.
 
         :param coro_factory: A callable that returns an awaitable (e.g. a coroutine).
         :returns: The result of the awaitable.
-        :raises httpx.HTTPStatusError: On 4xx or after retries exhausted for 5xx/timeout/connect.
+        :raises httpx.HTTPStatusError: On non-retryable 4xx or after retries
+            exhausted for 5xx/429/timeout/connect.
         """
         last_exc: Exception | None = None
         for attempt in range(self._max_retries):
@@ -271,8 +279,26 @@ class EIAManager:
                 last_exc = e
                 if attempt == self._max_retries - 1:
                     raise
-                if isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500:
-                    raise
+                # 4xx is generally a permanent client error — but 429 means
+                # "slow down", so retry it with a longer backoff.
+                if isinstance(e, httpx.HTTPStatusError):
+                    status = e.response.status_code
+                    if status == 429:
+                        # Honor a Retry-After header if present, else back off
+                        # more aggressively than the default exponential.
+                        retry_after = e.response.headers.get("retry-after")
+                        try:
+                            delay = float(retry_after) if retry_after else 5.0 * (2**attempt)
+                        except ValueError:
+                            delay = 5.0 * (2**attempt)
+                        logger.warning(
+                            "EIA rate-limited (429), backing off %.1fs (attempt %s/%s)",
+                            delay, attempt + 1, self._max_retries,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                    if status < 500:
+                        raise
                 delay = 2**attempt
                 logger.warning("EIA request failed (attempt %s/%s), retrying in %ss: %s", attempt + 1, self._max_retries, delay, e)
                 await asyncio.sleep(delay)

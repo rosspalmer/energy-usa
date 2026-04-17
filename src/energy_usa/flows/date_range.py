@@ -65,16 +65,18 @@ def resolve_date_range(
 
 
 def make_run_name(cadence: str, date_start: str | None, date_end: str | None) -> str:
-    """Build a Prefect flow-run name that sorts by date range.
+    """Build a Prefect flow-run name in the format ``{start} - {end}: {cadence}``.
 
-    :param cadence: Dataset cadence label (monthly, daily, annual, quarterly).
+    :param cadence: Dataset cadence label (monthly, daily, annual, quarterly,
+        or 'backfill' for the multi-dataset parent flow).
     :param date_start: Start period or None.
     :param date_end: End period or None.
-    :returns: Human-readable, sortable run name.
+    :returns: Human-readable run name. Date range comes first so runs sort
+        chronologically in the Prefect UI.
     """
     s = date_start or "latest"
     e = date_end or "latest"
-    return f"{cadence} {s} to {e}"
+    return f"{s} - {e}: {cadence}"
 
 
 def monthly_chunks(

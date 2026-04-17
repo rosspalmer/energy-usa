@@ -47,16 +47,16 @@ async def main() -> None:
     registry = get_flow_registry("eia")
     deployments = []
 
-    for dataset_name, flow_fn in sorted(registry.items()):
+    for dataset_name, target in sorted(registry.items()):
         cron = SCHEDULE_OVERRIDES.get(dataset_name, MONTHLY_CRON)
         name = f"ingest-eia-{dataset_name.replace('_', '-')}"
         deployments.append(
             RunnerDeployment.from_flow(
-                flow_fn,
+                target.flow,
                 name=name,
                 work_pool_name="process-pool",
                 cron=cron,
-                tags=["ingest", "eia"],
+                tags=["ingest", "eia", target.cadence],
                 entrypoint_type=EntrypointType.MODULE_PATH,
             )
         )
@@ -69,7 +69,6 @@ async def main() -> None:
             parameters={
                 "date_start": None,
                 "date_end": None,
-                "chunk_months": 1,
                 "dataset": "retail_sales",
             },
             tags=["backfill", "eia"],

@@ -25,28 +25,28 @@
 **Files:**
 - Create: `evidence/package.json`
 - Create: `evidence/package-lock.json`
-- Create: `evidence/svelte.config.js`
-- Create: `evidence/evidence.plugins.yaml`
+- Create: `evidence/evidence.config.yaml` (combined plugins + theme config in current Evidence)
 - Create: `evidence/pages/index.md` (placeholder; Task 7 replaces it)
+- Create: `evidence/README.md`, `evidence/.npmrc`, `evidence/.gitignore`, `evidence/.vscode/extensions.json` (standard scaffold files)
 - Modify: `.gitignore`
 
-We use the official `npx @evidence-dev/evidence@latest create` to generate a fresh scaffold so the dependency set and scaffold files stay in sync with current Evidence. Then we trim the demo content and commit only the skeleton.
+We clone the official Evidence starter template with `degit` so the dependency set and scaffold files stay in sync with current Evidence. Then we trim the demo content and commit only the skeleton.
 
-- [ ] **Step 1: Scaffold with the Evidence CLI**
+> **Note on the scaffold command.** Current Evidence (v40+) ships a single `evidence.config.yaml` (no separate `svelte.config.js` or `evidence.plugins.yaml` — Evidence regenerates those at runtime into `.evidence/template/`). The plan was originally written against an older layout; this reflects the current reality.
+
+- [ ] **Step 1: Clone the Evidence starter template**
 
 Run from the repo root:
 
 ```bash
-npx --yes @evidence-dev/evidence@latest create evidence
+npx --yes degit evidence-dev/template evidence
 ```
 
-Expected: command downloads Evidence, creates `evidence/` with `package.json`, `svelte.config.js`, `evidence.plugins.yaml`, `sources/`, `pages/`, a default `.gitignore`, and `package-lock.json`. It may prompt for a name — use `evidence`.
-
-If `npx` is unavailable on the host, run it inside a Node container instead:
+Expected: `degit` clones the template into `evidence/` (tracked files only, no `.git/`). If `npx` or `git` is unavailable on the host, run inside a Node container:
 
 ```bash
-docker run --rm -it -v "$PWD":/work -w /work node:20-alpine \
-  npx --yes @evidence-dev/evidence@latest create evidence
+docker run --rm -v "$PWD":/work -w /work node:20-alpine \
+  sh -c "apk add --no-cache git && npx --yes degit evidence-dev/template evidence"
 ```
 
 - [ ] **Step 2: Remove demo content, keep only skeleton**
@@ -77,17 +77,22 @@ Append to the top-level `.gitignore`:
 # Evidence
 evidence/node_modules/
 evidence/build/
-evidence/.evidence/
+evidence/.evidence/template/
+evidence/.evidence/meta/
 evidence/static/data/
 ```
+
+Note the `.evidence/template` and `.evidence/meta` scoping: these are the
+generated subdirs. We deliberately leave `.evidence/customization/`
+trackable because it holds user-authored format presets.
 
 Verify `.gitignore` now contains those lines:
 
 ```bash
-grep -E "evidence/(node_modules|build|\.evidence|static/data)" .gitignore
+grep -E "evidence/(node_modules|build|\.evidence/(template|meta)|static/data)" .gitignore
 ```
 
-Expected: four matching lines printed.
+Expected: five matching lines printed.
 
 - [ ] **Step 4: Verify the scaffold boots locally**
 
@@ -105,9 +110,7 @@ Expected: `curl` returns HTML (Evidence landing page). If it fails, inspect `npm
 - [ ] **Step 5: Commit**
 
 ```bash
-git add evidence/package.json evidence/package-lock.json \
-        evidence/svelte.config.js evidence/evidence.plugins.yaml \
-        evidence/pages/index.md .gitignore
+git add evidence/ .gitignore
 git commit -m "scaffold Evidence.dev project"
 ```
 
@@ -171,9 +174,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install deps from package-lock for reproducibility.
+# Install deps from package-lock for reproducibility. --legacy-peer-deps
+# works around an upstream ERESOLVE between Evidence's typescript peer and
+# svelte2tsx (known Evidence issue as of v40.x).
 COPY evidence/package.json evidence/package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Seed the rest of the project so first-run before the bind mount works.
 COPY evidence/ ./

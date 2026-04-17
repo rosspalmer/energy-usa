@@ -13,9 +13,12 @@ from energy_usa.config import Settings
 from energy_usa.db.connection import get_connection
 from energy_usa.db.ingest.eia.rto_daily_region_data import upsert_rto_daily_region_data
 from energy_usa.clients.eia import EIAManager
-from energy_usa.flows.date_range import make_run_name, resolve_date_range
+from energy_usa.flows.date_range import resolve_date_range
 
 EIA_PAGE_LENGTH = 5000
+
+# Cadence label exposed for backfill chunking and run naming.
+CADENCE = "daily"
 EIA_RTO_DAILY_REGION_COLUMNS = ["value"]
 
 
@@ -88,7 +91,7 @@ def _run_name(**kwargs):
 
 @flow(
     name="ingest-eia-rto-daily-region-data",
-    flow_run_name=_run_name,
+    flow_run_name="{date_start} - {date_end}: daily",
     retries=2,
     retry_delay_seconds=60,
     timeout_seconds=900,
@@ -116,6 +119,10 @@ async def ingest_eia_rto_daily_region_data(
     )
     total = upsert_rto_daily_region_data_task(settings.ingest_database_url, data)
     if total == 0:
-        raise RuntimeError(f"Zero rows upserted for {start}→{end} — EIA API returned no data")
+        logger.warning(
+            "No data returned for %s→%s — EIA may not have published yet",
+            start, end,
+        )
+        return 0
     logger.info("Complete: rows_upserted=%s", total)
     return total
