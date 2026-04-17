@@ -19,4 +19,4 @@ wheels/
 exports/*.csv
 
 # JetBrains internals
-.idea/
+.idea/.superpowers/
