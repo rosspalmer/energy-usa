@@ -358,3 +358,26 @@ Supply and demand match to within **{balance_summary[0].residual_pct}%** on
 average across the selected date range. Residuals come from rounding,
 reporting lag, and consumption categories not captured in retail sales
 (e.g. behind-the-meter generation for own-use).
+
+## Recent months
+
+The last 24 months of data for the selected state. Click a column header
+to sort; use the search box to filter.
+
+```sql recent
+select
+  period,
+  gen_total_mwh         as gen,
+  gen_fossil_mwh        as fossil,
+  gen_renewable_mwh     as renewable,
+  gen_nuclear_mwh       as nuclear,
+  net_interstate_trade_mwh as net_trade,
+  consumption_total_mwh    as consumption,
+  estimated_losses_mwh     as losses
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+order by period desc
+limit 24
+```
+
+<DataTable data={recent} search=true sort=true/>
