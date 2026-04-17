@@ -162,3 +162,23 @@ evidence-build:  ## Build Evidence static site to evidence/build/
 
 evidence-logs:  ## Tail the evidence container logs
 	docker compose logs -f evidence
+
+evidence-publish:  ## Sync evidence/build/ to DEST (local dir or s3:// URI)
+	@if [ ! -f evidence/build/index.html ]; then \
+	    echo "evidence/build missing — running evidence-build first"; \
+	    $(MAKE) evidence-build; \
+	fi
+	@case "$(DEST)" in \
+	  s3://*) \
+	    command -v aws >/dev/null 2>&1 || { \
+	      echo "error: aws CLI not found on PATH; install it or pick a local DEST"; \
+	      exit 1; \
+	    }; \
+	    echo "Publishing to $(DEST) via aws s3 sync"; \
+	    aws s3 sync evidence/build/ "$(DEST)" --delete ;; \
+	  *) \
+	    mkdir -p "$(DEST)"; \
+	    echo "Publishing to $(DEST) via rsync"; \
+	    rsync -av --delete evidence/build/ "$(DEST)" ;; \
+	esac
+	@echo "Published to $(DEST)"
