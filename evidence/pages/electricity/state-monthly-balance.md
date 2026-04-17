@@ -70,3 +70,74 @@ contributed **{latest[0].gen_fossil_mwh}** MWh, renewables
   title="Estimated losses (MWh)"
   fmt="#,##0"
 />
+
+## Generation mix over time
+
+Stacked area chart of monthly generation (MWh) by fuel type.
+
+```sql gen_mix
+select
+  period,
+  gen_coal_mwh          as coal,
+  gen_natural_gas_mwh   as natural_gas,
+  gen_nuclear_mwh       as nuclear,
+  gen_hydro_mwh         as hydro,
+  gen_solar_mwh         as solar,
+  gen_wind_mwh          as wind,
+  gen_geothermal_mwh    as geothermal,
+  gen_biomass_mwh       as biomass,
+  gen_petroleum_mwh     as petroleum
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+  and period between '${inputs.range.start}' and '${inputs.range.end}'
+order by period
+```
+
+<AreaChart
+  data={gen_mix}
+  x=period
+  y={["coal","natural_gas","nuclear","hydro","solar","wind","geothermal","biomass","petroleum"]}
+  type=stacked
+  yFmt="#,##0"
+  title="Generation by fuel type"
+/>
+
+```sql gen_mix_summary
+with ranked as (
+  select
+    case
+      when gen_coal_mwh        = gen_total_mwh then 'coal'
+      when gen_natural_gas_mwh = gen_total_mwh then 'natural gas'
+      when gen_nuclear_mwh     = gen_total_mwh then 'nuclear'
+      when gen_hydro_mwh       = gen_total_mwh then 'hydro'
+      when gen_solar_mwh       = gen_total_mwh then 'solar'
+      when gen_wind_mwh        = gen_total_mwh then 'wind'
+      else (
+        select fuel from (values
+          ('coal',        gen_coal_mwh),
+          ('natural gas', gen_natural_gas_mwh),
+          ('nuclear',     gen_nuclear_mwh),
+          ('hydro',       gen_hydro_mwh),
+          ('solar',       gen_solar_mwh),
+          ('wind',        gen_wind_mwh),
+          ('geothermal',  gen_geothermal_mwh),
+          ('biomass',     gen_biomass_mwh),
+          ('petroleum',   gen_petroleum_mwh)
+        ) as f(fuel, amt)
+        order by amt desc nulls last
+        limit 1
+      )
+    end as top_fuel,
+    round(100.0 * gen_renewable_mwh / nullif(gen_total_mwh, 0), 1) as renewable_share,
+    period
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+  order by period desc
+  limit 1
+)
+select * from ranked
+```
+
+In the most recent month, the largest single fuel source in
+**{inputs.state.value}** was **{gen_mix_summary[0].top_fuel}**. Renewables
+supplied **{gen_mix_summary[0].renewable_share}%** of generation.
