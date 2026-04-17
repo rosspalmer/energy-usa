@@ -20,3 +20,9 @@ exports/*.csv
 
 # JetBrains internals
 .idea/.superpowers/
+
+# Evidence
+evidence/node_modules/
+evidence/build/
+evidence/.evidence/
+evidence/static/data/
