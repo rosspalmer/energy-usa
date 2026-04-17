@@ -242,3 +242,63 @@ In the most recent month, **{inputs.state.value}** was a net
 **{trade_summary[0].net_interstate_abs}** MWh across state lines.
 International trade totaled **{trade_summary[0].intl_imports}** MWh of
 imports and **{trade_summary[0].intl_exports}** MWh of exports.
+
+## Consumption by sector
+
+Retail sales broken out by customer class. Residential and commercial
+demand swap the top spot seasonally; industrial demand is typically flatter
+year-round.
+
+```sql consumption
+select
+  period,
+  consumption_residential_mwh    as residential,
+  consumption_commercial_mwh     as commercial,
+  consumption_industrial_mwh     as industrial,
+  consumption_transportation_mwh as transportation,
+  consumption_other_mwh          as other
+from electricity.state_monthly_balance
+where state = '${inputs.state.value}'
+  and period between '${inputs.range.start}' and '${inputs.range.end}'
+order by period
+```
+
+<AreaChart
+  data={consumption}
+  x=period
+  y={["residential","commercial","industrial","transportation","other"]}
+  type=stacked
+  yFmt="#,##0"
+  title="Retail consumption by sector"
+/>
+
+```sql consumption_summary
+with latest as (
+  select *
+  from electricity.state_monthly_balance
+  where state = '${inputs.state.value}'
+  order by period desc
+  limit 1
+),
+top_sector as (
+  select sector, amt
+  from (
+    select 'residential'    as sector, consumption_residential_mwh    as amt from latest
+    union all select 'commercial',     consumption_commercial_mwh     from latest
+    union all select 'industrial',     consumption_industrial_mwh     from latest
+    union all select 'transportation', consumption_transportation_mwh from latest
+    union all select 'other',          consumption_other_mwh          from latest
+  ) s
+  order by amt desc nulls last
+  limit 1
+)
+select
+  latest.consumption_total_mwh as total_mwh,
+  top_sector.sector             as top_sector,
+  round(100.0 * top_sector.amt / nullif(latest.consumption_total_mwh, 0), 1) as top_sector_share
+from latest, top_sector
+```
+
+Of the **{consumption_summary[0].total_mwh}** MWh consumed in the most
+recent month, the largest sector was **{consumption_summary[0].top_sector}**
+at **{consumption_summary[0].top_sector_share}%** of the total.
