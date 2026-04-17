@@ -1,0 +1,21 @@
+# Evidence.dev dev server. Built as part of the main compose stack.
+# The image is intentionally thin: node_modules are installed once at build
+# time, then the project source is bind-mounted in compose so edits on the
+# host hot-reload inside the container.
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install deps from package-lock for reproducibility. --legacy-peer-deps
+# works around an upstream ERESOLVE between Evidence's typescript peer and
+# svelte2tsx (known Evidence issue as of v40.x).
+COPY evidence/package.json evidence/package-lock.json ./
+RUN npm ci --legacy-peer-deps
+
+# Seed the rest of the project so first-run before the bind mount works.
+COPY evidence/ ./
+
+EXPOSE 3000
+
+# Dev mode keeps hot reload on the bind-mounted source.
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
