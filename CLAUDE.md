@@ -241,3 +241,11 @@ The production compose files differ from `compose.yaml` in one key way: `postgre
 | jupyter | 8888 | Jupyter Lab + jupyter-ai |
 | pgweb | 8080 | Postgres web UI (quick table browsing) |
 | superset | 8088 | Apache Superset BI dashboard |
+| evidence | 3000 | Evidence.dev narrative data docs |
+
+### Evidence reports
+
+Evidence.dev runs as a Docker service on port 3000. Pages are hand-authored
+markdown with embedded SQL in `evidence/pages/`. See `docs/evidence.md`
+for the workflow and `docs/superpowers/specs/2026-04-16-evidence-docs-design.md`
+for the design intent.

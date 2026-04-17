@@ -94,6 +94,7 @@ Examples:
 ```
 
 - **Superset** (dashboard): http://localhost:8088  
+- **Evidence** (narrative reports): http://localhost:3000 — see `docs/evidence.md`
 - **Prefect UI** (job orchestration): http://localhost:4200  
 - **Jupyter** (notebooks): http://localhost:8888  
 - **pgweb** (Postgres browser): http://localhost:8080  
