@@ -26,7 +26,8 @@ TTABLE    ?=                        # Table for single-table transform (blank = 
         generate-ingest \
         validate audit generate-validate \
         transform \
-        dashboard-list dashboard-export dashboard-import
+        dashboard-list dashboard-export dashboard-import \
+        evidence evidence-build evidence-logs evidence-publish
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -137,3 +138,27 @@ dashboard-export:  ## Export dashboards to docker/superset/dashboards/
 
 dashboard-import:  ## Import dashboards from docker/superset/dashboards/
 	uv run python scripts/dashboards.py import
+
+# ── Evidence docs ─────────────────────────────────────────────────────────────
+# Evidence turns markdown + SQL into interactive static reports. Dev server at
+# http://localhost:3000 once the stack is up. See docs/evidence.md.
+#
+# Examples:
+#   make evidence                          # start just postgres + evidence
+#   make evidence-build                    # build static site to evidence/build/
+#   make evidence-logs                     # tail the container log
+#   make evidence-publish DEST=/tmp/share  # sync build to a directory
+#   make evidence-publish DEST=s3://bucket/path/
+
+DEST ?= exports/evidence-build/
+
+evidence:  ## Start just the Evidence service (+ postgres dependency)
+	docker compose up -d postgres evidence
+	@echo "Evidence available at http://localhost:3000"
+
+evidence-build:  ## Build Evidence static site to evidence/build/
+	docker compose run --rm evidence npm run build
+	@echo "Built static site at evidence/build/"
+
+evidence-logs:  ## Tail the evidence container logs
+	docker compose logs -f evidence
